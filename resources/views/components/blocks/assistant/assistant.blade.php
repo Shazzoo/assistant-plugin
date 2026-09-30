@@ -1,9 +1,13 @@
 @php
     $image = filled($data['image'] ?? null) ? media_url($data['image']) : null;
+    $avatarSettings = \Shazzoo\Assistant\Models\AvatarSettings::current();
+    $hasAvatarStage = filled($image)
+        || filled(media_url($avatarSettings->fallback_image_id))
+        || $avatarSettings->enabled;
     $suggestions = collect($data['suggestions'] ?? [])->pluck('text')->filter()->values()->all();
 @endphp
 
-<section @class(['assistant-block', 'assistant-block--with-image' => $image])>
+<section @class(['assistant-block', 'assistant-block--with-image' => $hasAvatarStage])>
     @if (filled($data['title'] ?? null) || filled($data['intro'] ?? null))
         <div class="assistant-block__head">
             @if (filled($data['title'] ?? null))
