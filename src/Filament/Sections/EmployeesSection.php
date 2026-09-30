@@ -2,10 +2,12 @@
 
 namespace Shazzoo\Assistant\Filament\Sections;
 
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -14,6 +16,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Schema;
 use Shazzoo\Assistant\Models\Employee;
 
 /**
@@ -47,6 +50,14 @@ final class EmployeesSection
 
     public static function table(Table $table): Table
     {
+        $headerActions = [
+            CreateAction::make()->label('Nieuwe medewerker')->model(Employee::class)->schema([Grid::make(2)->schema(self::formComponents())]),
+        ];
+
+        if (self::employeesPluginIsAvailable()) {
+            $headerActions[] = self::importFromEmployeesAction();
+        }
+
         return $table
             ->query(Employee::query())
             ->defaultSort('name')
@@ -66,12 +77,54 @@ final class EmployeesSection
                     ->description(fn (Employee $record): ?string => $record->updated_by)
                     ->toggleable(),
             ])
-            ->headerActions([
-                CreateAction::make()->label('Nieuwe medewerker')->model(Employee::class)->schema([Grid::make(2)->schema(self::formComponents())]),
-            ])
+            ->headerActions($headerActions)
             ->recordActions([
                 EditAction::make()->label('Bewerken')->schema([Grid::make(2)->schema(self::formComponents())]),
                 DeleteAction::make()->label('Verwijderen')->modalDescription('Doe dit ook als een medewerker vraagt om uit de assistent gehaald te worden.'),
             ]);
+    }
+
+    private static function employeesPluginIsAvailable(): bool
+    {
+        return class_exists(\Shazzoo\Employees\Models\Employee::class)
+            && Schema::hasTable('content_studio_employees');
+    }
+
+    private static function importFromEmployeesAction(): Action
+    {
+        $employeesModel = \Shazzoo\Employees\Models\Employee::class;
+
+        return Action::make('importFromEmployees')
+            ->label('Toevoegen uit Employees')
+            ->modalHeading('Medewerker toevoegen uit Employees')
+            ->modalDescription('De medewerker wordt nog niet door de assistent genoemd. Leg eerst toestemming vast in de lijst.')
+            ->schema([
+                Select::make('employee_id')
+                    ->label('Medewerker')
+                    ->options(fn (): array => $employeesModel::query()
+                        ->orderBy('name')
+                        ->get()
+                        ->mapWithKeys(fn ($employee): array => [
+                            $employee->getKey() => implode(' · ', array_filter([
+                                $employee->name,
+                                $employee->role,
+                                $employee->locale,
+                            ])),
+                        ])
+                        ->all())
+                    ->searchable()
+                    ->required(),
+            ])
+            ->action(function (array $data) use ($employeesModel): void {
+                $source = $employeesModel::query()->findOrFail($data['employee_id']);
+
+                Employee::query()->create([
+                    'name' => $source->name,
+                    'role' => $source->role,
+                    'expertise' => implode(', ', $source->skills),
+                    'may_be_named' => false,
+                    'consented_at' => null,
+                ]);
+            });
     }
 }
