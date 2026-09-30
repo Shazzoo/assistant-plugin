@@ -1,6 +1,6 @@
 <?php
 
-namespace Shazzoo\Assistant\Filament\Tabs;
+namespace Shazzoo\Assistant\Filament\Sections;
 
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -24,7 +24,7 @@ use Shazzoo\Assistant\Models\KnowledgeEntry;
 /**
  * Het kennisbestand: wat de assistent naast de website mag weten.
  */
-final class KnowledgeTab
+final class KnowledgeSection
 {
     public const array CATEGORIES = ['Diensten', 'Tarieven', 'Mensen', 'Referenties', 'Techniek', 'Werkwijze', 'Juridisch', 'Assistent'];
 

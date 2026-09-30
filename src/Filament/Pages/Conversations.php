@@ -4,10 +4,10 @@ namespace Shazzoo\Assistant\Filament\Pages;
 
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
-use Shazzoo\Assistant\Filament\Tabs\ConversationsTab;
-use Shazzoo\Assistant\Filament\Tabs\UnansweredTab;
+use Shazzoo\Assistant\Filament\Sections\ConversationsSection;
+use Shazzoo\Assistant\Filament\Sections\UnansweredSection;
 
-class Conversations extends TabbedTablePage
+class Conversations extends AccordionPage
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
 
@@ -19,11 +19,11 @@ class Conversations extends TabbedTablePage
 
     protected static ?int $navigationSort = 1;
 
-    public static function tabs(): array
+    public static function sections(): array
     {
         return [
-            'gesprekken' => ['Gesprekken', ConversationsTab::class, 'Geschoond: contactgegevens zijn eruit gehaald. Na '.config('assistant.transcripts.retention_days').' dagen worden ze verwijderd.'],
-            'onbeantwoord' => ['Onbeantwoorde vragen', UnansweredTab::class, UnansweredTab::DESCRIPTION],
+            'gesprekken' => ['Gesprekken', ConversationsSection::class, 'Geschoond: contactgegevens zijn eruit gehaald. Na '.config('assistant.transcripts.retention_days').' dagen worden ze verwijderd.'],
+            'onbeantwoord' => ['Onbeantwoorde vragen', UnansweredSection::class, UnansweredSection::DESCRIPTION],
         ];
     }
 
@@ -37,8 +37,8 @@ class Conversations extends TabbedTablePage
         return 'danger';
     }
 
-    public function tabBadge(string $tab): ?string
+    public function sectionBadge(string $section): ?string
     {
-        return $tab === 'onbeantwoord' ? Assistant::getNavigationBadge() : null;
+        return $section === 'onbeantwoord' ? Assistant::getNavigationBadge() : null;
     }
 }

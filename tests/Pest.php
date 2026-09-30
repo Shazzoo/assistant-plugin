@@ -1,9 +1,13 @@
 <?php
 
 use Livewire\Features\SupportTesting\Testable;
-use Shazzoo\Assistant\Filament\Pages\Conversations;
-use Shazzoo\Assistant\Filament\Pages\Knowledge;
 use Shazzoo\Assistant\Filament\Pages\Settings;
+use Shazzoo\Assistant\Filament\Sections\ConversationsSection;
+use Shazzoo\Assistant\Filament\Sections\EmployeesSection;
+use Shazzoo\Assistant\Filament\Sections\KnowledgeSection;
+use Shazzoo\Assistant\Filament\Sections\ReferencesSection;
+use Shazzoo\Assistant\Filament\Sections\UnansweredSection;
+use Shazzoo\Assistant\Livewire\AssistantTable;
 use Shazzoo\Assistant\Tests\TestCase;
 use Shazzoo\ContentStudioCore\Models\Page;
 use Shazzoo\ContentStudioCore\Models\User;
@@ -45,17 +49,21 @@ function cmsPage(array $attributes): Page
 }
 
 /**
- * De beheerpagina van de assistent waar dit tabblad op staat, op dat tabblad.
+ * Een onderdeel van het beheer: de tabel van dat blok, of de instellingen.
  */
-function assistantAdmin(string $tab = 'onbeantwoord'): Testable
+function assistantAdmin(string $section = 'onbeantwoord'): Testable
 {
-    $page = match ($tab) {
-        'gesprekken', 'onbeantwoord' => Conversations::class,
-        'kennisbestand', 'medewerkers', 'referenties' => Knowledge::class,
-        'instellingen' => Settings::class,
+    if ($section === 'instellingen') {
+        return Livewire\Livewire::test(Settings::class);
+    }
+
+    $source = match ($section) {
+        'gesprekken' => ConversationsSection::class,
+        'onbeantwoord' => UnansweredSection::class,
+        'kennisbestand' => KnowledgeSection::class,
+        'medewerkers' => EmployeesSection::class,
+        'referenties' => ReferencesSection::class,
     };
 
-    return $page === Settings::class
-        ? Livewire\Livewire::test($page)
-        : Livewire\Livewire::withQueryParams(['tab' => $tab])->test($page);
+    return Livewire\Livewire::test(AssistantTable::class, ['source' => $source]);
 }

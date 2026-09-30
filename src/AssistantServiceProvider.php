@@ -17,6 +17,7 @@ use Shazzoo\Assistant\Console\ImportKnowledgeCommand;
 use Shazzoo\Assistant\Http\AssetController;
 use Shazzoo\Assistant\Http\StopAvatarController;
 use Shazzoo\Assistant\Livewire\AssistantChat;
+use Shazzoo\Assistant\Livewire\AssistantTable;
 use Shazzoo\Assistant\Models\AssistantSettings;
 use Shazzoo\Assistant\Models\AvatarSettings;
 use Shazzoo\Assistant\Models\Conversation;
@@ -83,6 +84,7 @@ final class AssistantServiceProvider extends ServiceProvider
         $this->publishes([$basePath.'/resources/views' => resource_path('views/vendor/assistant')], 'assistant-views');
 
         Livewire::component('assistant-chat', AssistantChat::class);
+        Livewire::component('assistant-table', AssistantTable::class);
 
         $this->registerRoutes();
 

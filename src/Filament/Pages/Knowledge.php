@@ -4,11 +4,11 @@ namespace Shazzoo\Assistant\Filament\Pages;
 
 use BackedEnum;
 use Filament\Support\Icons\Heroicon;
-use Shazzoo\Assistant\Filament\Tabs\EmployeesTab;
-use Shazzoo\Assistant\Filament\Tabs\KnowledgeTab;
-use Shazzoo\Assistant\Filament\Tabs\ReferencesTab;
+use Shazzoo\Assistant\Filament\Sections\EmployeesSection;
+use Shazzoo\Assistant\Filament\Sections\KnowledgeSection;
+use Shazzoo\Assistant\Filament\Sections\ReferencesSection;
 
-class Knowledge extends TabbedTablePage
+class Knowledge extends AccordionPage
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
 
@@ -20,12 +20,12 @@ class Knowledge extends TabbedTablePage
 
     protected static ?int $navigationSort = 2;
 
-    public static function tabs(): array
+    public static function sections(): array
     {
         return [
-            'kennisbestand' => ['Kennisbestand', KnowledgeTab::class, 'Wat de assistent naast de website mag weten. Staat een antwoord nergens, dan zegt hij dat hij het niet weet.'],
-            'medewerkers' => ['Medewerkers', EmployeesTab::class, EmployeesTab::DESCRIPTION],
-            'referenties' => ['Referenties', ReferencesTab::class, ReferencesTab::DESCRIPTION],
+            'kennisbestand' => ['Kennisbestand', KnowledgeSection::class, 'Wat de assistent naast de website mag weten. Staat een antwoord nergens, dan zegt hij dat hij het niet weet.'],
+            'medewerkers' => ['Medewerkers', EmployeesSection::class, EmployeesSection::DESCRIPTION],
+            'referenties' => ['Referenties', ReferencesSection::class, ReferencesSection::DESCRIPTION],
         ];
     }
 }

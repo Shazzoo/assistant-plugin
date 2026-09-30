@@ -1,6 +1,6 @@
 <?php
 
-namespace Shazzoo\Assistant\Filament\Tabs;
+namespace Shazzoo\Assistant\Filament\Sections;
 
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -19,7 +19,7 @@ use Shazzoo\Assistant\Models\Employee;
 /**
  * Medewerkers die de assistent mag noemen. Persoonsgegevens: alleen met akkoord van de medewerker.
  */
-final class EmployeesTab
+final class EmployeesSection
 {
     public const string DESCRIPTION = "De assistent noemt alleen wat hier staat: naam, functie, vakgebied, ervaring en hobby's. Nooit beschikbaarheid of privégegevens.";
 

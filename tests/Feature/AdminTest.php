@@ -7,6 +7,7 @@ use Shazzoo\Assistant\Assistant;
 use Shazzoo\Assistant\FakeAssistant;
 use Shazzoo\Assistant\Filament\Pages\Conversations;
 use Shazzoo\Assistant\Livewire\AssistantChat;
+use Shazzoo\Assistant\Livewire\AssistantTable;
 use Shazzoo\Assistant\Models\AssistantSettings;
 use Shazzoo\Assistant\Models\Conversation;
 use Shazzoo\Assistant\Models\ConversationMessage;
@@ -15,6 +16,7 @@ use Shazzoo\Assistant\Models\KnowledgeEntry;
 use Shazzoo\Assistant\Models\UnansweredQuestion;
 use Shazzoo\Assistant\UnansweredStatus;
 use Shazzoo\ContentStudioCore\Models\User;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 function admin(): User
 {
@@ -34,16 +36,29 @@ it('only lets administrators of the CMS in, with three pages under one menu item
 
     $this->get('/admin/assistent')->assertRedirect(Conversations::getUrl());
 
-    $this->get('/admin/assistent/gesprekken')->assertOk()->assertSeeInOrder(['Gesprekken', 'Kennis', 'Instellingen'])->assertSeeInOrder(['Gesprekken', 'Onbeantwoorde vragen']);
+    UnansweredQuestion::factory()->create();
+
+    $this->get('/admin/assistent/gesprekken')->assertOk()
+        ->assertSeeInOrder(['Gesprekken', 'Kennis', 'Instellingen'])
+        ->assertSeeInOrder(['Gesprekken', 'Onbeantwoorde vragen'])
+        ->assertSee('assistant-onbeantwoord', escape: false)
+        ->assertDontSee('fi-tabs', escape: false);
     $this->get('/admin/assistent/kennis')->assertOk()->assertSeeInOrder(['Kennisbestand', 'Medewerkers', 'Referenties']);
     $this->get('/admin/assistent/instellingen')->assertOk()->assertSee('Wie de assistent is');
 });
 
-it('opens every tab', function (string $tab) {
+it('renders the table of every section', function (string $section) {
     $this->actingAs(admin());
 
-    assistantAdmin($tab)->assertOk()->assertSet('tab', $tab);
+    assistantAdmin($section)->assertOk();
 })->with(['gesprekken', 'onbeantwoord', 'kennisbestand', 'medewerkers', 'referenties']);
+
+it('only renders the known tables', function () {
+    $this->actingAs(admin());
+
+    expect(fn () => (new AssistantTable)->mount(AssistantSettings::class))
+        ->toThrow(NotFoundHttpException::class);
+});
 
 it('lists open questions by how often they were asked', function () {
     $this->actingAs(admin());

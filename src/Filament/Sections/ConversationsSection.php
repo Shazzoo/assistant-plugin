@@ -1,6 +1,6 @@
 <?php
 
-namespace Shazzoo\Assistant\Filament\Tabs;
+namespace Shazzoo\Assistant\Filament\Sections;
 
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\RepeatableEntry;
@@ -18,7 +18,7 @@ use Shazzoo\Assistant\UnansweredReason;
 /**
  * De geschoonde gesprekken, om te lezen hoe bezoekers de assistent gebruiken.
  */
-final class ConversationsTab
+final class ConversationsSection
 {
     /**
      * @return array<int, mixed>

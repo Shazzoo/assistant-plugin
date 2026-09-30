@@ -1,6 +1,6 @@
 <?php
 
-namespace Shazzoo\Assistant\Filament\Tabs;
+namespace Shazzoo\Assistant\Filament\Sections;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -23,7 +23,7 @@ use Shazzoo\Assistant\UnansweredStatus;
 /**
  * Vragen waarop de assistent het antwoord schuldig bleef: de inhoudsopgave voor het kennisbestand en de site.
  */
-final class UnansweredTab
+final class UnansweredSection
 {
     public const string DESCRIPTION = 'Vragen waarop de assistent het antwoord schuldig bleef, in de woorden van de bezoeker. Dit is de inhoudsopgave voor het kennisbestand en de site.';
 

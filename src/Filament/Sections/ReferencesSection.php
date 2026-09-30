@@ -1,6 +1,6 @@
 <?php
 
-namespace Shazzoo\Assistant\Filament\Tabs;
+namespace Shazzoo\Assistant\Filament\Sections;
 
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
@@ -19,7 +19,7 @@ use Shazzoo\Assistant\Models\ClientReference;
 /**
  * Klanten die de assistent mag noemen, en hoe.
  */
-final class ReferencesTab
+final class ReferencesSection
 {
     public const string DESCRIPTION = 'Leg bij elke vrijgave vast waar de toestemming staat. Zonder vrijgave noemt de assistent alleen sector en omvang.';
 
