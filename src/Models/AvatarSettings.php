@@ -14,7 +14,7 @@ use Shazzoo\Assistant\Models\Concerns\TracksEditor;
  * De API-key wordt versleuteld opgeslagen, is niet mass-assignable en komt nooit in toArray()
  * (dus ook niet in een formulier). Zet hem alleen via setApiKey(). LIVEAVATAR_API_KEY in .env blijft als reserve werken.
  */
-#[Fillable(['enabled', 'sandbox', 'avatar_id', 'voice_id', 'context_id', 'language', 'quality', 'idle_stop_seconds', 'max_session_seconds', 'max_concurrent', 'monthly_budget_minutes'])]
+#[Fillable(['enabled', 'sandbox', 'avatar_id', 'voice_id', 'context_id', 'language', 'quality', 'idle_stop_seconds', 'max_session_seconds', 'max_concurrent', 'monthly_budget_minutes', 'fallback_image_id'])]
 #[Hidden(['api_key'])]
 class AvatarSettings extends Model
 {
@@ -45,6 +45,7 @@ class AvatarSettings extends Model
             'max_session_seconds' => 'integer',
             'max_concurrent' => 'integer',
             'monthly_budget_minutes' => 'integer',
+            'fallback_image_id' => 'integer',
         ];
     }
 

@@ -13,14 +13,26 @@
     'disclaimer' => null,
 ])
 
+@php
+    $avatarSettings = \Shazzoo\Assistant\Models\AvatarSettings::current();
+    $fallbackMedia = filled($image)
+        ? null
+        : \FinnWiel\ShazzooMedia\Models\ShazzooMedia::find($avatarSettings->fallback_image_id);
+    $fallbackImage = filled($image) ? $image : $fallbackMedia?->url;
+    $fallbackAlt = filled($alt) ? $alt : ($fallbackMedia?->alt ?? '');
+    $showAvatarStage = filled($fallbackImage) || $avatarSettings->enabled;
+@endphp
+
 @once
     <link rel="stylesheet" href="{{ route('assistant.css', 'chat.css') }}">
 @endonce
 
 <div {{ $attributes->class(['assistant-panel']) }}>
-    @if (filled($image))
+    @if ($showAvatarStage)
         <div class="assistant-block__stage" data-assistant-avatar-stage data-livekit-url="{{ config('assistant.avatar.livekit_url') }}">
-            <img src="{{ $image }}" alt="{{ $alt }}" loading="lazy">
+            @if (filled($fallbackImage))
+                <img src="{{ $fallbackImage }}" alt="{{ $fallbackAlt }}" loading="lazy">
+            @endif
 
             {{-- Pratende avatar: verschijnt op de plek van de foto zodra de assistent live spreekt. --}}
             <video data-avatar-video hidden autoplay playsinline aria-label="{{ __('assistant::assistant.avatar_speaking', ['name' => app(\Shazzoo\Assistant\Models\AssistantSettings::class)->assistantName()]) }}"></video>

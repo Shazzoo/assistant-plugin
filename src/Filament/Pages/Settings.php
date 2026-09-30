@@ -15,6 +15,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
+use FinnWiel\ShazzooMedia\Components\Forms\ShazzooMediaPicker;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Number;
 use Shazzoo\Assistant\Avatar\AvatarSessions;
@@ -153,6 +154,11 @@ class Settings extends Page
                         Toggle::make('forget_api_key')
                             ->label('Sleutel uit het beheer wissen')
                             ->helperText('Staat er een sleutel in .env, dan wordt die daarna weer gebruikt.'),
+                        ShazzooMediaPicker::make('fallback_image_id')
+                            ->label('Fallbackafbeelding')
+                            ->helperText('Wordt getoond zolang de pratende avatar niet spreekt. Leeg laten om alleen de avatar te tonen.')
+                            ->fileType('image')
+                            ->columnSpanFull(),
                         TextInput::make('avatar_id')
                             ->label('Avatar-id')
                             ->uuid()

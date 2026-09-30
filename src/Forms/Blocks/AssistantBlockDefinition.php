@@ -28,7 +28,7 @@ final class AssistantBlockDefinition
                     ->columnSpan(12),
                 MediaPicker::make('image')
                     ->label('Afbeelding')
-                    ->helperText('Vierkant getoond, naast of boven de chat. Staat de pratende avatar aan, dan verschijnt die op deze plek.')
+                    ->helperText('Vierkant getoond, naast of boven de chat. Leeg: de fallbackafbeelding uit Instellingen. Staat de pratende avatar aan, dan verschijnt die op deze plek.')
                     ->fileType('image')
                     ->columnSpan(8),
                 TextInput::make('image_alt')
