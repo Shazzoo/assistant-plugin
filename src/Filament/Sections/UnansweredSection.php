@@ -25,8 +25,6 @@ use Shazzoo\Assistant\UnansweredStatus;
  */
 final class UnansweredSection
 {
-    public const string DESCRIPTION = 'Vragen waarop de assistent het antwoord schuldig bleef, in de woorden van de bezoeker. Dit is de inhoudsopgave voor het kennisbestand en de site.';
-
     /**
      * @return array<int, mixed>
      */

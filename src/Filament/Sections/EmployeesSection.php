@@ -21,8 +21,6 @@ use Shazzoo\Assistant\Models\Employee;
  */
 final class EmployeesSection
 {
-    public const string DESCRIPTION = "De assistent noemt alleen wat hier staat: naam, functie, vakgebied, ervaring en hobby's. Nooit beschikbaarheid of privégegevens.";
-
     /**
      * @return array<int, mixed>
      */

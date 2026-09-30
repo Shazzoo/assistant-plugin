@@ -14,9 +14,9 @@ abstract class AccordionPage extends Page
     protected string $view = 'assistant::filament.accordion';
 
     /**
-     * De blokken: sleutel => [kop, klasse met table(), omschrijving].
+     * De blokken: sleutel => [kop, klasse met table()].
      *
-     * @return array<string, array{0: string, 1: class-string, 2: ?string}>
+     * @return array<string, array{0: string, 1: class-string}>
      */
     abstract public static function sections(): array;
 

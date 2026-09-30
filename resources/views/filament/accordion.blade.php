@@ -1,8 +1,7 @@
 <x-filament-panels::page>
-    @foreach ($this::sections() as $key => [$heading, $source, $description])
+    @foreach ($this::sections() as $key => [$heading, $source])
         <x-filament::section
             :heading="$heading"
-            :description="$description"
             collapsible
             :collapsed="! $loop->first"
             persist-collapsed

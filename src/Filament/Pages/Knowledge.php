@@ -23,9 +23,9 @@ class Knowledge extends AccordionPage
     public static function sections(): array
     {
         return [
-            'kennisbestand' => ['Kennisbestand', KnowledgeSection::class, 'Wat de assistent naast de website mag weten. Staat een antwoord nergens, dan zegt hij dat hij het niet weet.'],
-            'medewerkers' => ['Medewerkers', EmployeesSection::class, EmployeesSection::DESCRIPTION],
-            'referenties' => ['Referenties', ReferencesSection::class, ReferencesSection::DESCRIPTION],
+            'kennisbestand' => ['Kennisbestand', KnowledgeSection::class],
+            'medewerkers' => ['Medewerkers', EmployeesSection::class],
+            'referenties' => ['Referenties', ReferencesSection::class],
         ];
     }
 }

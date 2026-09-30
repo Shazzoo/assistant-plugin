@@ -21,8 +21,6 @@ use Shazzoo\Assistant\Models\ClientReference;
  */
 final class ReferencesSection
 {
-    public const string DESCRIPTION = 'Leg bij elke vrijgave vast waar de toestemming staat. Zonder vrijgave noemt de assistent alleen sector en omvang.';
-
     /**
      * @return array<int, mixed>
      */

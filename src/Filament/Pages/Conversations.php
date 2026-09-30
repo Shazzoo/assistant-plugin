@@ -22,8 +22,8 @@ class Conversations extends AccordionPage
     public static function sections(): array
     {
         return [
-            'gesprekken' => ['Gesprekken', ConversationsSection::class, 'Geschoond: contactgegevens zijn eruit gehaald. Na '.config('assistant.transcripts.retention_days').' dagen worden ze verwijderd.'],
-            'onbeantwoord' => ['Onbeantwoorde vragen', UnansweredSection::class, UnansweredSection::DESCRIPTION],
+            'gesprekken' => ['Gesprekken', ConversationsSection::class],
+            'onbeantwoord' => ['Onbeantwoorde vragen', UnansweredSection::class],
         ];
     }
 
