@@ -1,0 +1,45 @@
+<?php
+
+return [
+    'default_name' => 'Assistent',
+    'default_contact' => 'een van onze collega\'s',
+    'role' => 'AI-assistent',
+    'source' => 'Bron',
+    'thinking' => 'Even nadenken…',
+    'prompt_label' => 'Uw vraag aan :name',
+    'placeholder' => 'Stel :name een vraag…',
+    'ask' => 'Vraag het',
+
+    'prompt_required' => 'Typ eerst een vraag.',
+    'prompt_too_long' => 'Uw vraag is te lang. Houd het onder de :max tekens.',
+    'too_many' => 'U stelt wel heel veel vragen achter elkaar. Probeert u het over een tijdje opnieuw, of belt u ons op :phone.',
+    'limit_reached' => 'U heeft voor nu het maximale aantal vragen gesteld. Wilt u verder praten? Stuur het gesprek mee, of neem contact op met :contact.',
+
+    'failed' => 'Er ging iets mis aan mijn kant. Probeert u het zo nog eens, of belt u ons op :phone.',
+    'not_sure' => 'Dat weet ik niet zeker, en ik ga het niet gokken. :contact kan u dat binnen een werkdag vertellen. U kunt dit gesprek meesturen, of zelf even bellen: :phone.',
+    'out_of_bounds' => 'Daar kan ik u niet mee helpen. :contact kan dat wel: bel :phone of mail :email.',
+
+    'share_offer' => 'Wilt u dat :contact hierop terugkomt?',
+    'share_open' => 'Stuur gesprek mee',
+    'share_intro' => 'Dan sturen wij dit gesprek door naar :contact, inclusief wat u heeft ingetikt. Laat hieronder achter hoe wij u kunnen bereiken.',
+    'share_name' => 'Naam',
+    'share_email' => 'E-mail',
+    'share_phone' => 'Of telefoon',
+    'share_note' => 'Wilt u er nog iets bij zeggen? (mag leeg)',
+    'share_send' => 'Stuur naar :contact',
+    'share_cancel' => 'Toch niet',
+    'share_done' => 'Uw gesprek is doorgestuurd naar :contact.',
+    'share_name_required' => 'Vul uw naam in.',
+    'share_reach_required' => 'Vul een e-mailadres of telefoonnummer in, zodat wij u kunnen bereiken.',
+    'share_email_invalid' => 'Dit lijkt geen geldig e-mailadres.',
+    'share_phone_invalid' => 'Dit lijkt geen geldig telefoonnummer.',
+    'share_too_long' => 'Dit is te lang.',
+    'share_busy' => 'Versturen lukt nu even niet. Bel ons op :phone of mail naar :email.',
+    'share_failed' => 'Versturen is niet gelukt. Bel ons op :phone of mail naar :email.',
+
+    'retention' => 'Dit gesprek wordt :days dagen bewaard om :name te verbeteren. Uw contactgegevens halen wij eruit voordat het wordt opgeslagen.',
+    'avatar_notice' => 'Stem en beeld worden gemaakt door HeyGen in de VS; daarvoor gaan alleen de antwoorden daarheen, niet wat u typt.',
+    'avatar_sound_on' => 'Geluid aan',
+    'avatar_sound_off' => 'Geluid uit',
+    'avatar_speaking' => ':name spreekt het antwoord uit',
+];

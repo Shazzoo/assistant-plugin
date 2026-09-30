@@ -1,0 +1,45 @@
+<?php
+
+return [
+    'default_name' => 'Assistant',
+    'default_contact' => 'one of our colleagues',
+    'role' => 'AI assistant',
+    'source' => 'Source',
+    'thinking' => 'Thinking…',
+    'prompt_label' => 'Your question for :name',
+    'placeholder' => 'Ask :name a question…',
+    'ask' => 'Ask',
+
+    'prompt_required' => 'Type a question first.',
+    'prompt_too_long' => 'Your question is too long. Keep it under :max characters.',
+    'too_many' => 'You are asking a lot of questions in a row. Please try again in a while, or call us on :phone.',
+    'limit_reached' => 'You have asked the maximum number of questions for now. Want to keep talking? Send the conversation along, or get in touch with :contact.',
+
+    'failed' => 'Something went wrong on my end. Please try again shortly, or call us on :phone.',
+    'not_sure' => 'I am not sure about that, and I will not guess. :contact can tell you within one working day. You can send this conversation along, or call us: :phone.',
+    'out_of_bounds' => 'I cannot help you with that. :contact can: call :phone or email :email.',
+
+    'share_offer' => 'Would you like :contact to follow up on this?',
+    'share_open' => 'Send conversation',
+    'share_intro' => 'We will forward this conversation to :contact, including what you typed. Leave your details below so we can reach you.',
+    'share_name' => 'Name',
+    'share_email' => 'Email',
+    'share_phone' => 'Or phone',
+    'share_note' => 'Anything you would like to add? (optional)',
+    'share_send' => 'Send to :contact',
+    'share_cancel' => 'Never mind',
+    'share_done' => 'Your conversation has been forwarded to :contact.',
+    'share_name_required' => 'Please enter your name.',
+    'share_reach_required' => 'Please enter an email address or phone number so we can reach you.',
+    'share_email_invalid' => 'This does not look like a valid email address.',
+    'share_phone_invalid' => 'This does not look like a valid phone number.',
+    'share_too_long' => 'This is too long.',
+    'share_busy' => 'Sending is not possible right now. Call us on :phone or email :email.',
+    'share_failed' => 'Sending failed. Call us on :phone or email :email.',
+
+    'retention' => 'This conversation is kept for :days days to improve :name. We remove your contact details before it is stored.',
+    'avatar_notice' => 'Voice and video are made by HeyGen in the US; only the answers go there, not what you type.',
+    'avatar_sound_on' => 'Sound on',
+    'avatar_sound_off' => 'Sound off',
+    'avatar_speaking' => ':name is speaking the answer',
+];
