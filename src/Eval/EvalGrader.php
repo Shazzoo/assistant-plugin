@@ -2,10 +2,10 @@
 
 namespace Shazzoo\Assistant\Eval;
 
-use Anthropic\Client;
 use RuntimeException;
 use Shazzoo\Assistant\Answer;
 use Shazzoo\Assistant\Knowledge;
+use Shazzoo\Assistant\LlmAssistant;
 use Shazzoo\Assistant\Models\AssistantSettings;
 
 /**
@@ -34,9 +34,10 @@ class EvalGrader
         MD;
 
     public function __construct(
-        private Client $client,
         private Knowledge $knowledge,
         private AssistantSettings $settings,
+        private string $provider = 'anthropic',
+        private string $model = self::JUDGE_MODEL,
     ) {}
 
     /**
@@ -202,44 +203,21 @@ class EvalGrader
             ->map(fn (array $turn): string => ($turn['role'] === 'user' ? 'Bezoeker' : $this->settings->assistantName()).": {$turn['content']}")
             ->implode("\n\n");
 
-        $response = $this->client->beta->messages->create(
-            model: self::JUDGE_MODEL,
-            maxTokens: 16000,
-            betas: ['server-side-fallback-2026-07-01'],
-            fallbacks: 'default',
-            system: [
-                ['type' => 'text', 'text' => strtr(self::JUDGE_INSTRUCTIONS, [
-                    '{{assistant}}' => $this->settings->assistantName(),
-                    '{{company}}' => $this->settings->companyName(),
-                ])],
-                ['type' => 'text', 'text' => "<bronnen>\n".$this->knowledge->render()."\n</bronnen>", 'cacheControl' => ['type' => 'ephemeral']],
-            ],
-            messages: [[
-                'role' => 'user',
-                'content' => "<gesprek>\n{$transcript}\n</gesprek>\n\n<bronregel_onder_antwoord>".($answer->source ?? '(geen)')."</bronregel_onder_antwoord>\n\n<verwacht>\n{$case['verwacht']}\n</verwacht>",
-            ]],
-            outputConfig: ['format' => [
-                'type' => 'json_schema',
-                'schema' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'verzinsels' => ['type' => 'array', 'items' => ['type' => 'string']],
-                        'geen_verzinsels' => ['type' => 'boolean'],
-                        'gedrag_ok' => ['type' => 'boolean'],
-                        'toelichting' => ['type' => 'string'],
-                    ],
-                    'required' => ['verzinsels', 'geen_verzinsels', 'gedrag_ok', 'toelichting'],
-                    'additionalProperties' => false,
-                ],
-            ]],
+        $judge = new JudgeAgent(
+            strtr(self::JUDGE_INSTRUCTIONS, [
+                '{{assistant}}' => $this->settings->assistantName(),
+                '{{company}}' => $this->settings->companyName(),
+            ])."\n\n<bronnen>\n".$this->knowledge->render()."\n</bronnen>",
         );
 
-        if ($response->stopReason === 'refusal') {
-            throw new RuntimeException('Beoordelaar weigerde dit antwoord te beoordelen.');
-        }
+        $response = $judge->prompt(
+            "<gesprek>\n{$transcript}\n</gesprek>\n\n<bronregel_onder_antwoord>".($answer->source ?? '(geen)')."</bronregel_onder_antwoord>\n\n<verwacht>\n{$case['verwacht']}\n</verwacht>",
+            provider: $this->provider,
+            model: $this->model,
+            timeout: 180,
+        );
 
-        $json = collect($response->content)->first(fn (object $block): bool => $block->type === 'text')?->text;
-        $verdict = json_decode((string) $json, true);
+        $verdict = $response->structured;
 
         if (! is_array($verdict) || ! isset($verdict['gedrag_ok'], $verdict['geen_verzinsels'])) {
             throw new RuntimeException('Beoordelaar gaf geen geldig oordeel terug.');
@@ -250,13 +228,8 @@ class EvalGrader
             'verzinsels' => array_values($verdict['verzinsels']),
             'gedrag_ok' => (bool) $verdict['gedrag_ok'],
             'toelichting' => (string) $verdict['toelichting'],
-            'model' => $response->model,
-            'usage' => [
-                'input_tokens' => $response->usage->inputTokens,
-                'output_tokens' => $response->usage->outputTokens,
-                'cache_read_input_tokens' => $response->usage->cacheReadInputTokens ?? 0,
-                'cache_creation_input_tokens' => $response->usage->cacheCreationInputTokens ?? 0,
-            ],
+            'model' => $response->meta->model ?? $this->model,
+            'usage' => LlmAssistant::usage($response->usage),
         ];
     }
 }

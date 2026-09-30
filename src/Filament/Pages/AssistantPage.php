@@ -1,0 +1,306 @@
+<?php
+
+namespace Shazzoo\Assistant\Filament\Pages;
+
+use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Pages\Page;
+use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Schema;
+use Filament\Support\Icons\Heroicon;
+use Filament\Tables\Concerns\InteractsWithTable;
+use Filament\Tables\Contracts\HasTable;
+use Filament\Tables\Table;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Number;
+use Livewire\Attributes\Url;
+use Shazzoo\Assistant\Avatar\AvatarSessions;
+use Shazzoo\Assistant\Filament\Tabs\ConversationsTab;
+use Shazzoo\Assistant\Filament\Tabs\EmployeesTab;
+use Shazzoo\Assistant\Filament\Tabs\KnowledgeTab;
+use Shazzoo\Assistant\Filament\Tabs\ReferencesTab;
+use Shazzoo\Assistant\Filament\Tabs\UnansweredTab;
+use Shazzoo\Assistant\Filament\Widgets\StatsOverview;
+use Shazzoo\Assistant\Instructions;
+use Shazzoo\Assistant\Models\AssistantSettings;
+use Shazzoo\Assistant\Models\AvatarSettings;
+use Shazzoo\Assistant\Models\UnansweredQuestion;
+use Shazzoo\Assistant\UnansweredStatus;
+use UnitEnum;
+
+/**
+ * Het hele beheer van de assistent op één pagina, met een tabblad per onderdeel.
+ *
+ * @property-read Schema $form
+ */
+class AssistantPage extends Page implements HasTable
+{
+    use InteractsWithTable;
+
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
+
+    protected static string|UnitEnum|null $navigationGroup = 'Plugins';
+
+    protected static ?string $navigationLabel = 'AI-assistent';
+
+    protected static ?string $title = 'AI-assistent';
+
+    protected static ?string $slug = 'assistent';
+
+    protected static ?int $navigationSort = 40;
+
+    protected string $view = 'assistant::filament.page';
+
+    /** @var array<string, string> */
+    public const array TABS = [
+        'onbeantwoord' => 'Onbeantwoorde vragen',
+        'kennisbestand' => 'Kennisbestand',
+        'gesprekken' => 'Gesprekken',
+        'medewerkers' => 'Medewerkers',
+        'referenties' => 'Referenties',
+        'instellingen' => 'Instellingen',
+    ];
+
+    #[Url]
+    public string $tab = 'onbeantwoord';
+
+    /** @var array<string, mixed>|null */
+    public ?array $data = [];
+
+    public static function getNavigationBadge(): ?string
+    {
+        $new = UnansweredQuestion::query()->where('status', UnansweredStatus::New)->count();
+
+        return $new > 0 ? (string) $new : null;
+    }
+
+    public static function getNavigationBadgeColor(): string
+    {
+        return 'danger';
+    }
+
+    public function mount(): void
+    {
+        if (! array_key_exists($this->tab, self::TABS)) {
+            $this->tab = 'onbeantwoord';
+        }
+
+        $this->fillSettings();
+    }
+
+    public function updatedTab(): void
+    {
+        $this->resetTableSearch();
+        $this->tableSort = null;
+        $this->resetTable();
+    }
+
+    public function getSubheading(): ?string
+    {
+        return match ($this->tab) {
+            'onbeantwoord' => UnansweredTab::DESCRIPTION,
+            'kennisbestand' => 'Wat de assistent naast de website mag weten. Staat een antwoord nergens, dan zegt hij dat hij het niet weet.',
+            'gesprekken' => 'Geschoond: contactgegevens zijn eruit gehaald. Na '.config('assistant.transcripts.retention_days').' dagen worden ze verwijderd.',
+            'medewerkers' => EmployeesTab::DESCRIPTION,
+            'referenties' => ReferencesTab::DESCRIPTION,
+            default => null,
+        };
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [StatsOverview::class];
+    }
+
+    public function table(Table $table): Table
+    {
+        return match ($this->tab) {
+            'kennisbestand' => KnowledgeTab::table($table),
+            'gesprekken' => ConversationsTab::table($table),
+            'medewerkers' => EmployeesTab::table($table),
+            'referenties' => ReferencesTab::table($table),
+            // Het tabblad instellingen heeft geen tabel; de onbeantwoorde vragen staan klaar.
+            default => UnansweredTab::table($table),
+        };
+    }
+
+    public function form(Schema $schema): Schema
+    {
+        return $schema
+            ->statePath('data')
+            ->components([
+                Section::make('Wie de assistent is')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('name')
+                            ->label('Naam')
+                            ->placeholder(__('assistant::assistant.default_name'))
+                            ->maxLength(50),
+                        TextInput::make('company')
+                            ->label('Organisatie')
+                            ->helperText('Leeg: de naam van de site.')
+                            ->placeholder(config('app.name'))
+                            ->maxLength(100),
+                        Textarea::make('greeting')
+                            ->label('Begroeting')
+                            ->helperText('Staat bovenaan de chat voordat de bezoeker iets vraagt. Leeg: geen begroeting.')
+                            ->rows(2)
+                            ->columnSpanFull(),
+                    ]),
+                Section::make('Doorverbinden')
+                    ->description('Naar wie de assistent verwijst als hij iets niet weet of niet mag zeggen.')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('contact_name')
+                            ->label('Naam van de contactpersoon')
+                            ->placeholder(__('assistant::assistant.default_contact'))
+                            ->maxLength(100),
+                        TextInput::make('contact_phone')->label('Telefoon')->tel()->maxLength(30),
+                        TextInput::make('contact_email')->label('E-mail')->email()->maxLength(150),
+                        TextInput::make('share_to')
+                            ->label('"Stuur dit gesprek mee" gaat naar')
+                            ->helperText('Leeg: het e-mailadres hierboven. Zonder adres staat de knop uit.')
+                            ->email()
+                            ->maxLength(150),
+                        TagsInput::make('public_details')
+                            ->label('Andere openbare gegevens')
+                            ->helperText('Adressen en nummers van de organisatie zelf die bij het schonen van gesprekken mogen blijven staan. Telefoon en e-mail hierboven staan er al in.')
+                            ->columnSpanFull(),
+                    ]),
+                Section::make('Limieten')
+                    ->description(fn (): string => 'Provider: '.config('assistant.provider').', model: '.(config('assistant.model') ?: 'standaard').'. Voor alle bezoekers samen hooguit '.config('assistant.rate_limits.global_per_minute').' vragen per minuut.')
+                    ->columns(2)
+                    ->schema([
+                        TextInput::make('max_question_length')
+                            ->label('Tekens per vraag')
+                            ->numeric()->minValue(50)->maxValue(2000)->required(),
+                        TextInput::make('max_questions')
+                            ->label('Vragen per gesprek')
+                            ->helperText('Daarna verwijst de assistent naar een mens.')
+                            ->numeric()->minValue(1)->maxValue(100)->required(),
+                    ]),
+                Section::make('Instructies')
+                    ->description('Leeg: het algemene sjabloon van de plugin. Je kunt {{assistant}}, {{company}}, {{contact}}, {{phone}} en {{email}} gebruiken. Laat een wijziging eerst door de testset gaan (php artisan assistant:eval).')
+                    ->collapsed()
+                    ->schema([
+                        Textarea::make('instructions')
+                            ->hiddenLabel()
+                            ->rows(24)
+                            ->placeholder(fn (): string => Instructions::defaultTemplate())
+                            ->hintAction(
+                                Action::make('useTemplate')
+                                    ->label('Sjabloon invullen om aan te passen')
+                                    ->action(fn () => $this->data['instructions'] = Instructions::defaultTemplate()),
+                            ),
+                    ]),
+                Section::make('Pratende avatar')
+                    ->description(fn (): string => $this->avatarStatus())
+                    ->statePath('avatar')
+                    ->collapsed()
+                    ->columns(2)
+                    ->schema([
+                        Toggle::make('enabled')
+                            ->label('Pratende avatar aan')
+                            ->helperText('Uit: de foto staat er, zoals altijd.'),
+                        Toggle::make('sandbox')
+                            ->label('Sandbox (testen)')
+                            ->helperText('Gratis, maar met de testavatar "Wayne" en sessies van ongeveer een minuut. Zet uit om de eigen avatar te gebruiken; dan rekent LiveAvatar per minuut.')
+                            ->live(),
+                        TextInput::make('new_api_key')
+                            ->label('Nieuwe API-key van LiveAvatar')
+                            ->helperText(fn (): string => AvatarSettings::current()->apiKeyHint().'. Leeg laten om de huidige sleutel te houden; hij wordt versleuteld opgeslagen.')
+                            ->password()
+                            ->autocomplete('off')
+                            ->maxLength(500),
+                        Toggle::make('forget_api_key')
+                            ->label('Sleutel uit het beheer wissen')
+                            ->helperText('Staat er een sleutel in .env, dan wordt die daarna weer gebruikt.'),
+                        TextInput::make('avatar_id')
+                            ->label('Avatar-id')
+                            ->uuid()
+                            ->required(fn (Get $get): bool => (bool) $get('enabled') && ! $get('sandbox'))
+                            ->helperText('Uit app.liveavatar.com; wordt in de sandbox genegeerd.'),
+                        TextInput::make('voice_id')
+                            ->label('Stem-id')
+                            ->uuid()
+                            ->helperText('Een image avatar heeft geen eigen stem, dus vul dit in voor de eigen avatar.'),
+                        TextInput::make('context_id')
+                            ->label('Context-id')
+                            ->uuid()
+                            ->helperText('Alleen nodig als de avatar zonder context stil blijft.'),
+                        Select::make('language')
+                            ->label('Taal')
+                            ->options(['nl' => 'Nederlands', 'en' => 'Engels'])
+                            ->required(),
+                        Select::make('quality')
+                            ->label('Beeldkwaliteit')
+                            ->options(['low' => 'Laag', 'medium' => 'Middel', 'high' => 'Hoog', 'very_high' => 'Zeer hoog'])
+                            ->required(),
+                        TextInput::make('monthly_budget_minutes')
+                            ->label('Maandbudget (minuten)')
+                            ->helperText('Op = de foto blijft staan tot de volgende maand. Sandbox telt niet mee.')
+                            ->numeric()->minValue(0)->required(),
+                        TextInput::make('max_concurrent')
+                            ->label('Maximaal tegelijk')
+                            ->numeric()->minValue(1)->maxValue(50)->required(),
+                        TextInput::make('idle_stop_seconds')
+                            ->label('Stoppen na stilte (seconden)')
+                            ->helperText('HeyGen rekent door tot 5 minuten stilte; wij stoppen eerder.')
+                            ->numeric()->minValue(20)->maxValue(300)->required(),
+                        TextInput::make('max_session_seconds')
+                            ->label('Maximale sessieduur (seconden)')
+                            ->numeric()->minValue(60)->maxValue(3600)->required(),
+                    ]),
+            ]);
+    }
+
+    public function save(): void
+    {
+        $state = $this->form->getState();
+        $avatar = $state['avatar'] ?? [];
+
+        AssistantSettings::current()->update(Arr::except($state, ['avatar']));
+
+        $avatarSettings = AvatarSettings::current();
+        $avatarSettings->update(Arr::except($avatar, ['new_api_key', 'forget_api_key']));
+
+        if ($avatar['forget_api_key'] ?? false) {
+            $avatarSettings->setApiKey(null);
+        } elseif (filled($avatar['new_api_key'] ?? null)) {
+            $avatarSettings->setApiKey($avatar['new_api_key']);
+        }
+
+        // De sleutel nooit in de componentstatus laten staan.
+        $this->fillSettings();
+
+        Notification::make()->title('Opgeslagen')->success()->send();
+    }
+
+    private function fillSettings(): void
+    {
+        $this->form->fill([
+            ...AssistantSettings::current()->toArray(),
+            'avatar' => AvatarSettings::current()->toArray(),
+        ]);
+    }
+
+    private function avatarStatus(): string
+    {
+        $sessions = app(AvatarSessions::class);
+        $settings = AvatarSettings::current();
+        $reason = $sessions->unavailableReason();
+
+        $credits = $sessions->creditsLeft();
+
+        return ($reason ?? ($settings->sandbox ? 'Beschikbaar in de sandbox.' : 'Beschikbaar.'))
+            .' Deze maand '.$sessions->minutesUsedThisMonth().' van '.$settings->monthly_budget_minutes.' minuten gebruikt.'
+            .($credits === null ? '' : ' Saldo bij LiveAvatar: '.Number::format($credits, locale: 'nl').' credits.');
+    }
+}

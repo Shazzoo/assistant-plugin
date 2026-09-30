@@ -7,12 +7,12 @@ use Shazzoo\Assistant\UnansweredReason;
 
 beforeEach(function () {
     // Een kleine testset met elk soort controle; een site houdt zijn eigen set bij.
-    config(['assistant.eval_path' => dirname(__DIR__).'/fixtures/eval']);
+    config(['assistant.eval.path' => dirname(__DIR__).'/fixtures/eval']);
 });
 
 function evalCase(string $id): array
 {
-    $cases = json_decode(File::get(config('assistant.eval_path').'/cases.json'), true);
+    $cases = json_decode(File::get(config('assistant.eval.path').'/cases.json'), true);
 
     return collect($cases)->firstWhere('id', $id);
 }
@@ -34,7 +34,7 @@ it('passes the expected answers the user wrote themselves', function (string $id
 ]);
 
 it('fails an empty answer on every case with checks', function () {
-    $cases = json_decode(File::get(config('assistant.eval_path').'/cases.json'), true);
+    $cases = json_decode(File::get(config('assistant.eval.path').'/cases.json'), true);
 
     foreach ($cases as $case) {
         // Een leeg antwoord mag alleen de vaste controles halen als die niets eisen; de beoordelaar vangt de rest.

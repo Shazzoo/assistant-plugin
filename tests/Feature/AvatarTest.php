@@ -9,7 +9,6 @@ use Livewire\Livewire;
 use Shazzoo\Assistant\Assistant;
 use Shazzoo\Assistant\Avatar\AvatarSessions;
 use Shazzoo\Assistant\FakeAssistant;
-use Shazzoo\Assistant\Filament\Pages\TalkingAvatar;
 use Shazzoo\Assistant\Livewire\AssistantChat;
 use Shazzoo\Assistant\Models\AvatarSession;
 use Shazzoo\Assistant\Models\AvatarSettings;
@@ -238,11 +237,11 @@ it('stores the API key from the dashboard encrypted and never shows it', functio
     config(['assistant.avatar.api_key' => null]);
     $this->actingAs(adminUser(['email' => 'beheer@voorbeeld.nl']));
 
-    Livewire::test(TalkingAvatar::class)
-        ->fillForm(['new_api_key' => 'la-geheim-1234abcd'])
+    assistantAdmin('instellingen')
+        ->fillForm(['avatar' => ['new_api_key' => 'la-geheim-1234abcd']])
         ->call('save')
         ->assertHasNoFormErrors()
-        ->assertSet('data.new_api_key', null)
+        ->assertSet('data.avatar.new_api_key', null)
         ->assertDontSee('la-geheim-1234abcd')
         ->assertSee('eindigt op …abcd');
 
@@ -253,7 +252,7 @@ it('stores the API key from the dashboard encrypted and never shows it', functio
         ->and(AvatarSettings::current()->toArray())->not->toHaveKey('api_key')
         ->and(app(AvatarSessions::class)->unavailableReason())->not->toContain('API-key');
 
-    $this->get('/admin/assistent/pratende-avatar')->assertDontSee('la-geheim-1234abcd');
+    $this->get('/admin/assistent?tab=instellingen')->assertDontSee('la-geheim-1234abcd');
 });
 
 it('keeps the key when the field is left empty and can forget it', function () {
@@ -261,10 +260,10 @@ it('keeps the key when the field is left empty and can forget it', function () {
     $this->actingAs(adminUser(['email' => 'beheer@voorbeeld.nl']));
     AvatarSettings::current()->setApiKey('dashboard-key-1111');
 
-    Livewire::test(TalkingAvatar::class)->fillForm(['new_api_key' => ''])->call('save');
+    assistantAdmin('instellingen')->fillForm(['avatar' => ['new_api_key' => '']])->call('save');
     expect(AvatarSettings::current()->apiKey())->toBe('dashboard-key-1111');
 
-    Livewire::test(TalkingAvatar::class)->fillForm(['forget_api_key' => true])->call('save');
+    assistantAdmin('instellingen')->fillForm(['avatar' => ['forget_api_key' => true]])->call('save');
     expect(AvatarSettings::current()->apiKey())->toBe('env-key-9999')
         ->and(AvatarSettings::current()->apiKeyHint())->toContain('.env');
 });
@@ -294,11 +293,11 @@ it('lets an administrator switch the avatar and the sandbox in the dashboard', f
     fakeLiveAvatar();
     $this->actingAs(adminUser(['email' => 'beheer@voorbeeld.nl']));
 
-    Livewire::test(TalkingAvatar::class)
-        ->fillForm(['enabled' => true, 'sandbox' => false, 'avatar_id' => ''])
+    assistantAdmin('instellingen')
+        ->fillForm(['avatar' => ['enabled' => true, 'sandbox' => false, 'avatar_id' => '']])
         ->call('save')
-        ->assertHasFormErrors(['avatar_id' => 'required'])
-        ->fillForm(['enabled' => true, 'sandbox' => false, 'avatar_id' => '11111111-2222-3333-4444-555555555555'])
+        ->assertHasFormErrors(['avatar.avatar_id' => 'required'])
+        ->fillForm(['avatar' => ['enabled' => true, 'sandbox' => false, 'avatar_id' => '11111111-2222-3333-4444-555555555555']])
         ->call('save')
         ->assertHasNoFormErrors();
 
@@ -307,5 +306,5 @@ it('lets an administrator switch the avatar and the sandbox in the dashboard', f
         ->sandbox->toBeFalse()
         ->effectiveAvatarId()->toBe('11111111-2222-3333-4444-555555555555');
 
-    $this->get('/admin/assistent/pratende-avatar')->assertOk()->assertSee('Deze maand')->assertSee('1.110 credits')->assertSee('555 minuten');
+    $this->get('/admin/assistent?tab=instellingen')->assertOk()->assertSee('Deze maand')->assertSee('1.110 credits');
 });

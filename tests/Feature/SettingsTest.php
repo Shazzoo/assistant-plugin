@@ -1,7 +1,6 @@
 <?php
 
 use Livewire\Livewire;
-use Shazzoo\Assistant\Filament\Pages\AssistantSettingsPage;
 use Shazzoo\Assistant\Instructions;
 use Shazzoo\Assistant\Livewire\AssistantChat;
 use Shazzoo\Assistant\Models\AssistantSettings;
@@ -9,7 +8,7 @@ use Shazzoo\Assistant\Models\AssistantSettings;
 it('saves the settings of the assistant in the admin', function () {
     $this->actingAs(adminUser(['name' => 'Beheerder']));
 
-    Livewire::test(AssistantSettingsPage::class)
+    assistantAdmin('instellingen')
         ->fillForm([
             'name' => 'Joan',
             'company' => 'Voorbeeld B.V.',
@@ -26,6 +25,12 @@ it('saves the settings of the assistant in the admin', function () {
         ->name->toBe('Joan')
         ->updated_by->toBe('Beheerder')
         ->and(app(Instructions::class)->render())->toContain('Je bent Joan, de AI-assistent op de website van Voorbeeld B.V.');
+});
+
+it('starts with the default limits on a fresh install', function () {
+    expect(AssistantSettings::current())
+        ->max_question_length->toBe(500)
+        ->max_questions->toBe(10);
 });
 
 it('uses the own instructions instead of the template, with the placeholders filled in', function () {

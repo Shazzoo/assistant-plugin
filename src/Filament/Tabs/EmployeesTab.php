@@ -1,51 +1,34 @@
 <?php
 
-namespace Shazzoo\Assistant\Filament\Resources\Employees;
+namespace Shazzoo\Assistant\Filament\Tabs;
 
-use BackedEnum;
+use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Resources\Resource;
+use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Shazzoo\Assistant\Filament\Resources\Employees\Pages\ManageEmployees;
 use Shazzoo\Assistant\Models\Employee;
-use UnitEnum;
 
 /**
  * Medewerkers die de assistent mag noemen. Persoonsgegevens: alleen met akkoord van de medewerker.
  */
-class EmployeeResource extends Resource
+final class EmployeesTab
 {
-    protected static ?string $model = Employee::class;
+    public const string DESCRIPTION = "De assistent noemt alleen wat hier staat: naam, functie, vakgebied, ervaring en hobby's. Nooit beschikbaarheid of privégegevens.";
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
-
-    protected static string|UnitEnum|null $navigationGroup = 'Assistent';
-
-    protected static ?string $slug = 'assistent/medewerkers';
-
-    protected static ?string $modelLabel = 'medewerker';
-
-    protected static ?string $pluralModelLabel = 'medewerkers';
-
-    protected static bool $hasTitleCaseModelLabel = false;
-
-    protected static ?string $recordTitleAttribute = 'name';
-
-    protected static ?int $navigationSort = 11;
-
-    public static function form(Schema $schema): Schema
+    /**
+     * @return array<int, mixed>
+     */
+    public static function formComponents(): array
     {
-        return $schema->columns(2)->components([
+        return [
             TextInput::make('name')->label('Naam')->required()->maxLength(255),
             TextInput::make('role')->label('Functie')->required()->maxLength(255),
             TextInput::make('expertise')->label('Vakgebied')->maxLength(255),
@@ -61,12 +44,13 @@ class EmployeeResource extends Resource
                 ->native(false)
                 ->displayFormat('j F Y'),
             Textarea::make('notes')->label('Toelichting')->rows(2)->columnSpanFull(),
-        ]);
+        ];
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            ->query(Employee::query())
             ->defaultSort('name')
             ->columns([
                 TextColumn::make('name')->label('Naam')->searchable()->sortable(),
@@ -84,16 +68,12 @@ class EmployeeResource extends Resource
                     ->description(fn (Employee $record): ?string => $record->updated_by)
                     ->toggleable(),
             ])
+            ->headerActions([
+                CreateAction::make()->label('Nieuwe medewerker')->model(Employee::class)->schema([Grid::make(2)->schema(self::formComponents())]),
+            ])
             ->recordActions([
-                EditAction::make()->label('Bewerken'),
+                EditAction::make()->label('Bewerken')->schema([Grid::make(2)->schema(self::formComponents())]),
                 DeleteAction::make()->label('Verwijderen')->modalDescription('Doe dit ook als een medewerker vraagt om uit de assistent gehaald te worden.'),
             ]);
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => ManageEmployees::route('/'),
-        ];
     }
 }

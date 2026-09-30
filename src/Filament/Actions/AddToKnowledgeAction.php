@@ -6,7 +6,7 @@ use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Facades\DB;
-use Shazzoo\Assistant\Filament\Resources\KnowledgeEntries\KnowledgeEntryResource;
+use Shazzoo\Assistant\Filament\Tabs\KnowledgeTab;
 use Shazzoo\Assistant\KnowledgeStatus;
 use Shazzoo\Assistant\Models\KnowledgeEntry;
 use Shazzoo\Assistant\Models\UnansweredQuestion;
@@ -35,7 +35,7 @@ class AddToKnowledgeAction
                 'source' => 'opgave organisatie',
                 'owner' => auth()->user()?->name,
             ])
-            ->schema(KnowledgeEntryResource::formComponents())
+            ->schema(KnowledgeTab::formComponents())
             ->action(function (array $data, UnansweredQuestion $record): void {
                 $entry = DB::transaction(function () use ($data, $record): KnowledgeEntry {
                     $entry = KnowledgeEntry::query()->create($data);

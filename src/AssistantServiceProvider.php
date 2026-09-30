@@ -2,7 +2,6 @@
 
 namespace Shazzoo\Assistant;
 
-use Anthropic\Client;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -50,13 +49,22 @@ final class AssistantServiceProvider extends ServiceProvider
                 return new FakeAssistant;
             }
 
-            return new ClaudeAssistant(
-                client: new Client(apiKey: config('assistant.api_key'), requestOptions: ['timeout' => 90]),
+            $model = config('assistant.model');
+            $providerOptions = config('assistant.provider_options', []);
+
+            // Haiku kent geen adaptive thinking en geen effort.
+            if (str_starts_with((string) $model, 'claude-haiku')) {
+                unset($providerOptions['anthropic']);
+            }
+
+            return new LlmAssistant(
                 knowledge: $app->make(Knowledge::class),
                 settings: $app->make(AssistantSettings::class),
-                model: config('assistant.model'),
-                effort: config('assistant.effort'),
+                provider: config('assistant.provider'),
+                model: filled($model) ? $model : null,
                 maxTokens: config('assistant.max_tokens'),
+                providerOptions: $providerOptions,
+                timeout: config('assistant.timeout'),
             );
         });
     }

@@ -18,6 +18,16 @@ class AssistantSettings extends Model
     protected $table = 'assistant_settings';
 
     /**
+     * Zoals de standaardwaarden in de database, zodat een nieuwe rij ze meteen heeft.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'max_question_length' => 500,
+        'max_questions' => 10,
+    ];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>

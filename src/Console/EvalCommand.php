@@ -2,17 +2,16 @@
 
 namespace Shazzoo\Assistant\Console;
 
-use Anthropic\Client;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Shazzoo\Assistant\Answer;
 use Shazzoo\Assistant\Assistant;
-use Shazzoo\Assistant\ClaudeAssistant;
 use Shazzoo\Assistant\Eval\EvalGrader;
 use Shazzoo\Assistant\Instructions;
 use Shazzoo\Assistant\Knowledge;
+use Shazzoo\Assistant\Llm\RecordAnswerTool;
 use Shazzoo\Assistant\Models\AssistantSettings;
 use Throwable;
 
@@ -20,8 +19,9 @@ use Throwable;
     {--variant=baseline : Naam van de run: baseline, v1, v2, ...}
     {--reps=2 : Hoe vaak elke vraag wordt gesteld}
     {--cases= : Alleen deze vragen (ids, komma-gescheiden)}
+    {--provider= : Andere provider voor de assistent, bijvoorbeeld openai of gemini}
     {--model= : Ander model voor de assistent, bijvoorbeeld claude-haiku-4-5}
-    {--effort= : Andere effort voor de assistent (low, medium, high)}
+    {--effort= : Andere effort voor Claude (low, medium, high)}
     {--approve-harness : Keur de huidige versie van runner, beoordelaar en vragen goed}')]
 #[Description('Draai de testset van de site via de echte assistent en beoordeel elk antwoord')]
 class EvalCommand extends Command
@@ -38,7 +38,7 @@ class EvalCommand extends Command
      */
     private function flowPath(): string
     {
-        return config('assistant.eval_path') ?? base_path('.claude/hillclimb/assistent-antwoorden');
+        return config('assistant.eval.path') ?? base_path('.claude/hillclimb/assistent-antwoorden');
     }
 
     /**
@@ -69,21 +69,26 @@ class EvalCommand extends Command
             return 2;
         }
 
+        if ($this->option('provider')) {
+            config(['assistant.provider' => $this->option('provider')]);
+        }
+
         if ($this->option('model')) {
             config(['assistant.model' => $this->option('model')]);
         }
 
         if ($this->option('effort')) {
-            config(['assistant.effort' => $this->option('effort')]);
+            config(['assistant.provider_options.anthropic.output_config.effort' => $this->option('effort')]);
         }
 
-        config(['assistant.driver' => 'claude']);
+        config(['assistant.driver' => 'llm']);
 
         $assistant = app(Assistant::class);
         $grader = new EvalGrader(
-            new Client(apiKey: config('assistant.api_key'), requestOptions: ['timeout' => 180]),
             app(Knowledge::class),
             app(AssistantSettings::class),
+            config('assistant.eval.provider'),
+            config('assistant.eval.model'),
         );
 
         $cases = $this->cases();
@@ -94,8 +99,7 @@ class EvalCommand extends Command
         $done = $this->completedAttempts("{$dir}/results.jsonl");
         $todo = count($cases) * $reps - count($done);
 
-        $effort = str_starts_with(config('assistant.model'), 'claude-haiku') ? 'n.v.t.' : config('assistant.effort');
-        $this->components->info(sprintf('%d vragen × %d keer op %s (effort %s), %d te gaan.', count($cases), $reps, config('assistant.model'), $effort, $todo));
+        $this->components->info(sprintf('%d vragen × %d keer op %s (%s), %d te gaan.', count($cases), $reps, config('assistant.provider'), config('assistant.model') ?? 'standaardmodel', $todo));
 
         $bar = $this->output->createProgressBar($todo);
         $started = microtime(true);
@@ -152,7 +156,7 @@ class EvalCommand extends Command
                 return;
             }
 
-            if (! str_starts_with((string) ($answer->meta['model'] ?? ''), config('assistant.model'))) {
+            if (filled(config('assistant.model')) && ! str_starts_with((string) ($answer->meta['model'] ?? ''), config('assistant.model'))) {
                 $this->logError($dir, $case, $rep, 'model_mismatch', "Antwoord kwam van {$answer->meta['model']}, gevraagd was ".config('assistant.model'), $answer, $usage);
 
                 return;
@@ -160,7 +164,7 @@ class EvalCommand extends Command
 
             $conversation[] = ['role' => 'assistant', 'content' => $answer->text];
             $trace[] = ['role' => 'assistant', 'content' => $answer->text];
-            $trace[] = ['role' => 'tool_call', 'name' => ClaudeAssistant::RECORD_TOOL, 'content' => json_encode(
+            $trace[] = ['role' => 'tool_call', 'name' => RecordAnswerTool::NAME, 'content' => json_encode(
                 ['bron' => $answer->source, 'status' => $grader->status($answer)],
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             )];

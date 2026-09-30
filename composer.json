@@ -1,12 +1,12 @@
 {
   "name": "shazzoo/assistant-plugin",
-  "description": "AI assistant for Content Studio: visitors ask questions and get answers from the site's own content, powered by Claude.",
+  "description": "AI assistant for Content Studio: visitors ask questions and get answers from the site's own content, via laravel/ai (Claude, ChatGPT, Gemini and more).",
   "type": "content-studio-plugin",
   "license": "MIT",
   "require": {
     "php": "^8.3",
-    "anthropic-ai/sdk": "^0.51.0",
     "filament/filament": "^5.0",
+    "laravel/ai": "^1.0",
     "livewire/livewire": "^4.0",
     "shazzoo/content-studio-core": "^1.5"
   },

@@ -15,23 +15,48 @@ use Shazzoo\Assistant\Knowledge\CmsPagesSource;
 return [
 
     /*
-    | "claude" praat met de Claude API, "fake" geeft vaste antwoorden
+    | "llm" praat via laravel/ai met een taalmodel, "fake" geeft vaste antwoorden
     | (handig om de interface te bouwen zonder API-key of kosten).
     */
-    'driver' => env('ASSISTANT_DRIVER', 'claude'),
-
-    'api_key' => env('ANTHROPIC_API_KEY'),
+    'driver' => env('ASSISTANT_DRIVER', 'llm'),
 
     /*
-    | claude-sonnet-5 is de standaard. claude-haiku-4-5 is goedkoper en
-    | sneller; vergelijk eerst met dezelfde testvragen voordat u wisselt.
-    | Effort (low, medium, high) werkt niet op Haiku en wordt daar genegeerd.
+    | Welke provider van laravel/ai: anthropic (Claude), openai (ChatGPT),
+    | gemini, mistral, ... De API-key staat in config/ai.php, bijvoorbeeld
+    | ANTHROPIC_API_KEY, OPENAI_API_KEY of GEMINI_API_KEY in .env.
     */
-    'model' => env('ASSISTANT_MODEL', 'claude-sonnet-5'),
+    'provider' => env('ASSISTANT_PROVIDER', 'anthropic'),
 
-    'effort' => env('ASSISTANT_EFFORT', 'medium'),
+    /*
+    | Leeg: het standaardmodel van de provider. De instructies zijn afgesteld
+    | op Claude; draai assistant:eval voordat u op een ander model overstapt.
+    */
+    'model' => env('ASSISTANT_MODEL'),
 
     'max_tokens' => (int) env('ASSISTANT_MAX_TOKENS', 8000),
+
+    'timeout' => (int) env('ASSISTANT_TIMEOUT', 90),
+
+    /*
+    | Extra velden per provider die zo in het verzoek gaan. Claude denkt eerst
+    | na, met deze effort (low, medium, high); Haiku kan dat niet en krijgt
+    | deze velden dan ook niet.
+    */
+    'provider_options' => [
+        'anthropic' => [
+            'thinking' => ['type' => 'adaptive'],
+            'output_config' => ['effort' => env('ASSISTANT_EFFORT', 'medium')],
+        ],
+    ],
+
+    /*
+    | Het model dat bij assistant:eval de antwoorden beoordeelt.
+    */
+    'eval' => [
+        'provider' => env('ASSISTANT_EVAL_PROVIDER', 'anthropic'),
+        'model' => env('ASSISTANT_EVAL_MODEL', 'claude-opus-5'),
+        'path' => env('ASSISTANT_EVAL_PATH'),
+    ],
 
     /*
     | Waar de assistent zijn kennis over de site vandaan haalt, naast het

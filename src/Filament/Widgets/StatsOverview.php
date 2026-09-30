@@ -7,9 +7,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Support\Collection;
-use Shazzoo\Assistant\Filament\Resources\Conversations\ConversationResource;
-use Shazzoo\Assistant\Filament\Resources\KnowledgeEntries\KnowledgeEntryResource;
-use Shazzoo\Assistant\Filament\Resources\UnansweredQuestions\UnansweredQuestionResource;
+use Shazzoo\Assistant\Filament\Pages\AssistantPage;
 use Shazzoo\Assistant\Models\AssistantSettings;
 use Shazzoo\Assistant\Models\DailyStatistic;
 use Shazzoo\Assistant\Models\KnowledgeEntry;
@@ -21,9 +19,10 @@ use Shazzoo\Assistant\UnansweredStatus;
  */
 class StatsOverview extends StatsOverviewWidget
 {
-    protected static ?int $sort = 1;
+    /** Alleen bovenaan de pagina van de assistent, niet op het dashboard van het CMS. */
+    protected static bool $isDiscovered = false;
 
-    protected ?string $heading = 'Assistent, laatste 30 dagen';
+    protected ?string $heading = 'Laatste 30 dagen';
 
     protected function getStats(): array
     {
@@ -43,13 +42,13 @@ class StatsOverview extends StatsOverviewWidget
                 ->description(number_format($questions, 0, ',', '.').' vragen gesteld')
                 ->descriptionIcon(Heroicon::ArrowRight, IconPosition::After)
                 ->chart($perDay('conversations'))
-                ->url(ConversationResource::getUrl('index')),
+                ->url(AssistantPage::getUrl(['tab' => 'gesprekken'])),
             Stat::make('Onbeantwoord', $questions > 0 ? round($unanswered / $questions * 100).'%' : '—')
                 ->description(sprintf('%d geen bron · %d onduidelijk · %d buiten de kaders', $days->sum('no_source'), $days->sum('unclear_source'), $days->sum('out_of_bounds')))
                 ->descriptionIcon(Heroicon::ArrowRight, IconPosition::After)
                 ->color($questions > 0 && $unanswered / $questions > 0.25 ? 'danger' : 'gray')
                 ->chart($this->perDay($days, fn (DailyStatistic $day): int => $day->unanswered()))
-                ->url(ConversationResource::getUrl('index', ['filters' => ['met_onbeantwoord' => ['isActive' => true]]])),
+                ->url(AssistantPage::getUrl(['tab' => 'onbeantwoord'])),
             Stat::make('Doorgestuurd naar '.app(AssistantSettings::class)->contactName(), number_format($days->sum('shared'), 0, ',', '.'))
                 // Wat bezoekers meestuurden, staat alleen in de mailbox; de plugin bewaart het niet.
                 ->description('staan in de mailbox van '.(app(AssistantSettings::class)->shareAddress() ?? '(geen adres ingesteld)'))
@@ -59,14 +58,12 @@ class StatsOverview extends StatsOverviewWidget
                 ->description('onbeantwoorde vragen nog niet afgehandeld')
                 ->descriptionIcon(Heroicon::ArrowRight, IconPosition::After)
                 ->color($openQuestions > 0 ? 'warning' : 'success')
-                ->url(UnansweredQuestionResource::getUrl('index')),
+                ->url(AssistantPage::getUrl(['tab' => 'onbeantwoord'])),
             Stat::make('Kennisbestand', $knowledge->count() - $knowledgeUnused.' van '.$knowledge->count())
                 ->description($knowledgeUnused > 0 ? "regels in gebruik, {$knowledgeUnused} nog niet" : 'regels in gebruik')
                 ->descriptionIcon(Heroicon::ArrowRight, IconPosition::After)
                 ->color($knowledgeUnused > 0 ? 'warning' : 'success')
-                ->url($knowledgeUnused > 0
-                    ? KnowledgeEntryResource::getUrl('index', ['filters' => ['used' => ['value' => false]]])
-                    : KnowledgeEntryResource::getUrl('index')),
+                ->url(AssistantPage::getUrl(['tab' => 'kennisbestand'])),
         ];
     }
 

@@ -1,63 +1,32 @@
 <?php
 
-namespace Shazzoo\Assistant\Filament\Resources\KnowledgeEntries;
+namespace Shazzoo\Assistant\Filament\Tabs;
 
-use BackedEnum;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Shazzoo\Assistant\Filament\Resources\KnowledgeEntries\Pages\CreateKnowledgeEntry;
-use Shazzoo\Assistant\Filament\Resources\KnowledgeEntries\Pages\EditKnowledgeEntry;
-use Shazzoo\Assistant\Filament\Resources\KnowledgeEntries\Pages\ListKnowledgeEntries;
 use Shazzoo\Assistant\KnowledgeStatus;
 use Shazzoo\Assistant\Models\KnowledgeEntry;
-use UnitEnum;
 
 /**
  * Het kennisbestand: wat de assistent naast de website mag weten.
  */
-class KnowledgeEntryResource extends Resource
+final class KnowledgeTab
 {
     public const array CATEGORIES = ['Diensten', 'Tarieven', 'Mensen', 'Referenties', 'Techniek', 'Werkwijze', 'Juridisch', 'Assistent'];
-
-    protected static ?string $model = KnowledgeEntry::class;
-
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBookOpen;
-
-    protected static string|UnitEnum|null $navigationGroup = 'Assistent';
-
-    protected static ?string $slug = 'assistent/kennisbestand';
-
-    protected static ?string $navigationLabel = 'Vragen en antwoorden';
-
-    protected static ?string $modelLabel = 'regel';
-
-    protected static ?string $pluralModelLabel = 'vragen en antwoorden';
-
-    protected static bool $hasTitleCaseModelLabel = false;
-
-    protected static ?string $recordTitleAttribute = 'question';
-
-    protected static ?int $navigationSort = 10;
-
-    public static function form(Schema $schema): Schema
-    {
-        return $schema->columns(1)->components(static::formComponents());
-    }
 
     /**
      * De vaste categorieën plus die al in gebruik zijn, zodat een geïmporteerde categorie kiesbaar blijft.
@@ -99,9 +68,9 @@ class KnowledgeEntryResource extends Resource
                         ->label('Antwoord')
                         ->helperText('In de je-vorm. Dit is wat de assistent mag zeggen. Laat [VUL IN] staan zolang iets nog niet vaststaat: dan gebruikt de assistent de regel niet.')
                         ->rows(4)
-                        ->required(fn (Get $get): bool => static::statusOf($get) !== KnowledgeStatus::Never)
+                        ->required(fn (Get $get): bool => self::statusOf($get) !== KnowledgeStatus::Never)
                         ->live(onBlur: true)
-                        ->hint(fn (?string $state): ?string => $state !== null && preg_match(KnowledgeEntry::PLACEHOLDER_PATTERN, $state) ? 'Bevat nog een plaatshouder: De assistent gebruikt deze regel nog niet' : null)
+                        ->hint(fn (?string $state): ?string => $state !== null && preg_match(KnowledgeEntry::PLACEHOLDER_PATTERN, $state) ? 'Bevat nog een plaatshouder: de assistent gebruikt deze regel nog niet' : null)
                         ->hintColor('warning'),
                 ]),
 
@@ -110,9 +79,9 @@ class KnowledgeEntryResource extends Resource
                 ->schema([
                     Select::make('status')
                         ->options([
-                            KnowledgeStatus::Free->value => 'vrij: De assistent antwoordt',
+                            KnowledgeStatus::Free->value => 'vrij: de assistent antwoordt',
                             KnowledgeStatus::Conditional->value => 'voorwaarde: alleen tot geldig_tot',
-                            KnowledgeStatus::Never->value => 'nooit: De assistent verbindt door',
+                            KnowledgeStatus::Never->value => 'nooit: de assistent verbindt door',
                         ])
                         ->default(KnowledgeStatus::Free->value)
                         ->required()
@@ -120,7 +89,7 @@ class KnowledgeEntryResource extends Resource
                     DatePicker::make('valid_until')
                         ->label('Geldig tot')
                         ->helperText('Daarna gebruikt de assistent de regel niet meer. Verplicht bij "voorwaarde".')
-                        ->required(fn (Get $get): bool => static::statusOf($get) === KnowledgeStatus::Conditional)
+                        ->required(fn (Get $get): bool => self::statusOf($get) === KnowledgeStatus::Conditional)
                         ->native(false)
                         ->displayFormat('j F Y'),
                     Select::make('category')
@@ -143,6 +112,7 @@ class KnowledgeEntryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->query(KnowledgeEntry::query())
             ->defaultSort('id')
             ->columns([
                 TextColumn::make('id')->label('#')->sortable(),
@@ -181,8 +151,8 @@ class KnowledgeEntryResource extends Resource
                 TernaryFilter::make('used')
                     ->label('Gebruikt door de assistent')
                     ->queries(
-                        true: fn (Builder $query) => $query->whereIn('id', static::usedIds()),
-                        false: fn (Builder $query) => $query->whereNotIn('id', static::usedIds()),
+                        true: fn (Builder $query) => $query->whereIn('id', self::usedIds()),
+                        false: fn (Builder $query) => $query->whereNotIn('id', self::usedIds()),
                     ),
                 SelectFilter::make('category')
                     ->label('Categorie')
@@ -190,8 +160,22 @@ class KnowledgeEntryResource extends Resource
                 SelectFilter::make('status')
                     ->options(collect(KnowledgeStatus::cases())->mapWithKeys(fn (KnowledgeStatus $status): array => [$status->value => $status->value])->all()),
             ])
+            ->headerActions([
+                CreateAction::make()
+                    ->label('Nieuwe regel')
+                    ->model(KnowledgeEntry::class)
+                    ->schema(self::formComponents())
+                    ->modalWidth('3xl'),
+            ])
             ->recordActions([
-                EditAction::make()->label('Bewerken'),
+                EditAction::make()
+                    ->label('Bewerken')
+                    ->schema(self::formComponents())
+                    ->modalWidth('3xl')
+                    ->modalDescription(fn (KnowledgeEntry $record): string => $record->usageProblem() === null
+                        ? 'De assistent gebruikt deze regel.'
+                        : 'De assistent gebruikt deze regel nu niet: '.mb_lcfirst($record->usageProblem()).'.'),
+                DeleteAction::make()->label('Verwijderen'),
             ])
             ->paginated([25, 50, 'all'])
             ->emptyStateHeading('Het kennisbestand is leeg')
@@ -211,14 +195,5 @@ class KnowledgeEntryResource extends Resource
     private static function usedIds(): array
     {
         return KnowledgeEntry::query()->get()->filter->isUsedByAssistant()->pluck('id')->values()->all();
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => ListKnowledgeEntries::route('/'),
-            'create' => CreateKnowledgeEntry::route('/create'),
-            'edit' => EditKnowledgeEntry::route('/{record}/edit'),
-        ];
     }
 }

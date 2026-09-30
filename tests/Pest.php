@@ -1,5 +1,7 @@
 <?php
 
+use Livewire\Features\SupportTesting\Testable;
+use Shazzoo\Assistant\Filament\Pages\AssistantPage;
 use Shazzoo\Assistant\Tests\TestCase;
 use Shazzoo\ContentStudioCore\Models\Page;
 use Shazzoo\ContentStudioCore\Models\User;
@@ -38,4 +40,12 @@ function cmsPage(array $attributes): Page
         'updated_by' => $author,
         ...$attributes,
     ]);
+}
+
+/**
+ * De beheerpagina van de assistent, op het gegeven tabblad.
+ */
+function assistantAdmin(string $tab = 'onbeantwoord'): Testable
+{
+    return Livewire\Livewire::withQueryParams(['tab' => $tab])->test(AssistantPage::class);
 }
