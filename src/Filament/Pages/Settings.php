@@ -15,102 +15,40 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Concerns\InteractsWithTable;
-use Filament\Tables\Contracts\HasTable;
-use Filament\Tables\Table;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Number;
-use Livewire\Attributes\Url;
 use Shazzoo\Assistant\Avatar\AvatarSessions;
-use Shazzoo\Assistant\Filament\Tabs\ConversationsTab;
-use Shazzoo\Assistant\Filament\Tabs\EmployeesTab;
-use Shazzoo\Assistant\Filament\Tabs\KnowledgeTab;
-use Shazzoo\Assistant\Filament\Tabs\ReferencesTab;
-use Shazzoo\Assistant\Filament\Tabs\UnansweredTab;
 use Shazzoo\Assistant\Instructions;
 use Shazzoo\Assistant\Models\AssistantSettings;
 use Shazzoo\Assistant\Models\AvatarSettings;
-use Shazzoo\Assistant\Models\UnansweredQuestion;
-use Shazzoo\Assistant\UnansweredStatus;
-use UnitEnum;
 
 /**
- * Het hele beheer van de assistent op één pagina, met een tabblad per onderdeel.
+ * Wat per site verschilt: naam, contactgegevens, limieten, instructies en de pratende avatar.
  *
  * @property-read Schema $form
  */
-class AssistantPage extends Page implements HasTable
+class Settings extends Page
 {
-    use InteractsWithTable;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedCog6Tooth;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChatBubbleLeftRight;
+    protected static ?string $cluster = Assistant::class;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Plugins';
+    protected static ?string $navigationLabel = 'Instellingen';
 
-    protected static ?string $navigationLabel = 'AI-assistent';
+    protected static ?string $title = 'Instellingen';
 
-    protected static ?string $title = 'AI-assistent';
+    protected static ?string $slug = 'instellingen';
 
-    protected static ?string $slug = 'assistent';
+    protected static ?int $navigationSort = 3;
 
-    protected static ?int $navigationSort = 40;
-
-    protected string $view = 'assistant::filament.page';
-
-    /** @var array<string, string> */
-    public const array TABS = [
-        'onbeantwoord' => 'Onbeantwoorde vragen',
-        'kennisbestand' => 'Kennisbestand',
-        'gesprekken' => 'Gesprekken',
-        'medewerkers' => 'Medewerkers',
-        'referenties' => 'Referenties',
-        'instellingen' => 'Instellingen',
-    ];
-
-    #[Url]
-    public string $tab = 'onbeantwoord';
+    protected string $view = 'assistant::filament.settings';
 
     /** @var array<string, mixed>|null */
     public ?array $data = [];
 
-    public static function getNavigationBadge(): ?string
-    {
-        $new = UnansweredQuestion::query()->where('status', UnansweredStatus::New)->count();
-
-        return $new > 0 ? (string) $new : null;
-    }
-
-    public static function getNavigationBadgeColor(): string
-    {
-        return 'danger';
-    }
-
     public function mount(): void
     {
-        if (! array_key_exists($this->tab, self::TABS)) {
-            $this->tab = 'onbeantwoord';
-        }
-
         $this->fillSettings();
-    }
-
-    public function updatedTab(): void
-    {
-        $this->resetTableSearch();
-        $this->tableSort = null;
-        $this->resetTable();
-    }
-
-    public function getSubheading(): ?string
-    {
-        return match ($this->tab) {
-            'onbeantwoord' => UnansweredTab::DESCRIPTION,
-            'kennisbestand' => 'Wat de assistent naast de website mag weten. Staat een antwoord nergens, dan zegt hij dat hij het niet weet.',
-            'gesprekken' => 'Geschoond: contactgegevens zijn eruit gehaald. Na '.config('assistant.transcripts.retention_days').' dagen worden ze verwijderd.',
-            'medewerkers' => EmployeesTab::DESCRIPTION,
-            'referenties' => ReferencesTab::DESCRIPTION,
-            default => null,
-        };
     }
 
     protected function getHeaderActions(): array
@@ -120,21 +58,8 @@ class AssistantPage extends Page implements HasTable
                 ->label('Opslaan')
                 ->icon('heroicon-o-check')
                 ->keyBindings(['mod+s'])
-                ->visible(fn (): bool => $this->tab === 'instellingen')
                 ->action(fn () => $this->save()),
         ];
-    }
-
-    public function table(Table $table): Table
-    {
-        return match ($this->tab) {
-            'kennisbestand' => KnowledgeTab::table($table),
-            'gesprekken' => ConversationsTab::table($table),
-            'medewerkers' => EmployeesTab::table($table),
-            'referenties' => ReferencesTab::table($table),
-            // Het tabblad instellingen heeft geen tabel; de onbeantwoorde vragen staan klaar.
-            default => UnansweredTab::table($table),
-        };
     }
 
     public function form(Schema $schema): Schema

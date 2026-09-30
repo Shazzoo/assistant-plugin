@@ -1,10 +1,10 @@
 <x-filament-panels::page>
     <x-filament::tabs>
-        @foreach ($this::TABS as $key => $label)
+        @foreach ($this::tabs() as $key => [$label])
             <x-filament::tabs.item
                 :active="$tab === $key"
                 wire:click="$set('tab', '{{ $key }}')"
-                :badge="$key === 'onbeantwoord' ? $this::getNavigationBadge() : null"
+                :badge="$this->tabBadge($key)"
                 badge-color="danger"
             >
                 {{ $label }}
@@ -12,9 +12,5 @@
         @endforeach
     </x-filament::tabs>
 
-    @if ($tab === 'instellingen')
-        {{ $this->form }}
-    @else
-        {{ $this->table }}
-    @endif
+    {{ $this->table }}
 </x-filament-panels::page>

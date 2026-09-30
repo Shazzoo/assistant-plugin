@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 use Shazzoo\Assistant\Assistant;
 use Shazzoo\Assistant\FakeAssistant;
-use Shazzoo\Assistant\Filament\Pages\AssistantPage;
+use Shazzoo\Assistant\Filament\Pages\Conversations;
 use Shazzoo\Assistant\Livewire\AssistantChat;
 use Shazzoo\Assistant\Models\AssistantSettings;
 use Shazzoo\Assistant\Models\Conversation;
@@ -25,22 +25,25 @@ it('sends guests to the login page', function () {
     $this->get('/admin')->assertRedirect('/admin/login');
 });
 
-it('only lets administrators of the CMS in, on one page with tabs', function () {
+it('only lets administrators of the CMS in, with three pages under one menu item', function () {
     $this->actingAs(adminUser(['email' => 'iemand@gmail.com', 'is_admin' => false]))
-        ->get('/admin/assistent')
+        ->get('/admin/assistent/gesprekken')
         ->assertForbidden();
 
-    $this->actingAs(admin())
-        ->get('/admin/assistent')
-        ->assertOk()
-        ->assertSeeInOrder(['Onbeantwoorde vragen', 'Kennisbestand', 'Gesprekken', 'Medewerkers', 'Referenties', 'Instellingen']);
+    $this->actingAs(admin());
+
+    $this->get('/admin/assistent')->assertRedirect(Conversations::getUrl());
+
+    $this->get('/admin/assistent/gesprekken')->assertOk()->assertSeeInOrder(['Gesprekken', 'Kennis', 'Instellingen'])->assertSeeInOrder(['Gesprekken', 'Onbeantwoorde vragen']);
+    $this->get('/admin/assistent/kennis')->assertOk()->assertSeeInOrder(['Kennisbestand', 'Medewerkers', 'Referenties']);
+    $this->get('/admin/assistent/instellingen')->assertOk()->assertSee('Wie de assistent is');
 });
 
 it('opens every tab', function (string $tab) {
     $this->actingAs(admin());
 
     assistantAdmin($tab)->assertOk()->assertSet('tab', $tab);
-})->with(array_keys(AssistantPage::TABS));
+})->with(['gesprekken', 'onbeantwoord', 'kennisbestand', 'medewerkers', 'referenties']);
 
 it('lists open questions by how often they were asked', function () {
     $this->actingAs(admin());
@@ -116,10 +119,8 @@ it('keeps the daily figures when transcripts are pruned', function () {
         ->and(DailyStatistic::count())->toBe(1);
 });
 
-it('saves the settings with the button in the header, only on the settings tab', function () {
+it('saves the settings with the button in the header', function () {
     $this->actingAs(admin());
-
-    assistantAdmin('kennisbestand')->assertActionHidden('save');
 
     assistantAdmin('instellingen')
         ->assertActionVisible('save')

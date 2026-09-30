@@ -252,7 +252,7 @@ it('stores the API key from the dashboard encrypted and never shows it', functio
         ->and(AvatarSettings::current()->toArray())->not->toHaveKey('api_key')
         ->and(app(AvatarSessions::class)->unavailableReason())->not->toContain('API-key');
 
-    $this->get('/admin/assistent?tab=instellingen')->assertDontSee('la-geheim-1234abcd');
+    $this->get('/admin/assistent/instellingen')->assertDontSee('la-geheim-1234abcd');
 });
 
 it('keeps the key when the field is left empty and can forget it', function () {
@@ -306,5 +306,5 @@ it('lets an administrator switch the avatar and the sandbox in the dashboard', f
         ->sandbox->toBeFalse()
         ->effectiveAvatarId()->toBe('11111111-2222-3333-4444-555555555555');
 
-    $this->get('/admin/assistent?tab=instellingen')->assertOk()->assertSee('Deze maand')->assertSee('1.110 credits');
+    $this->get('/admin/assistent/instellingen')->assertOk()->assertSee('Deze maand')->assertSee('1.110 credits');
 });

@@ -1,7 +1,9 @@
 <?php
 
 use Livewire\Features\SupportTesting\Testable;
-use Shazzoo\Assistant\Filament\Pages\AssistantPage;
+use Shazzoo\Assistant\Filament\Pages\Conversations;
+use Shazzoo\Assistant\Filament\Pages\Knowledge;
+use Shazzoo\Assistant\Filament\Pages\Settings;
 use Shazzoo\Assistant\Tests\TestCase;
 use Shazzoo\ContentStudioCore\Models\Page;
 use Shazzoo\ContentStudioCore\Models\User;
@@ -43,9 +45,17 @@ function cmsPage(array $attributes): Page
 }
 
 /**
- * De beheerpagina van de assistent, op het gegeven tabblad.
+ * De beheerpagina van de assistent waar dit tabblad op staat, op dat tabblad.
  */
 function assistantAdmin(string $tab = 'onbeantwoord'): Testable
 {
-    return Livewire\Livewire::withQueryParams(['tab' => $tab])->test(AssistantPage::class);
+    $page = match ($tab) {
+        'gesprekken', 'onbeantwoord' => Conversations::class,
+        'kennisbestand', 'medewerkers', 'referenties' => Knowledge::class,
+        'instellingen' => Settings::class,
+    };
+
+    return $page === Settings::class
+        ? Livewire\Livewire::test($page)
+        : Livewire\Livewire::withQueryParams(['tab' => $tab])->test($page);
 }
