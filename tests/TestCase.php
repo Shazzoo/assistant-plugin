@@ -43,8 +43,7 @@ abstract class TestCase extends Orchestra
             $src = dirname(__DIR__).'/src/Filament';
 
             $app->make('filament')->getPanel('admin')
-                ->discoverPages(in: $src.'/Pages', for: 'Shazzoo\\Assistant\\Filament\\Pages')
-                ->discoverWidgets(in: $src.'/Widgets', for: 'Shazzoo\\Assistant\\Filament\\Widgets');
+                ->discoverPages(in: $src.'/Pages', for: 'Shazzoo\\Assistant\\Filament\\Pages');
         });
     }
 

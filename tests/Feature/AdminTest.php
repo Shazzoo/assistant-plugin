@@ -6,7 +6,6 @@ use Livewire\Livewire;
 use Shazzoo\Assistant\Assistant;
 use Shazzoo\Assistant\FakeAssistant;
 use Shazzoo\Assistant\Filament\Pages\AssistantPage;
-use Shazzoo\Assistant\Filament\Widgets\StatsOverview;
 use Shazzoo\Assistant\Livewire\AssistantChat;
 use Shazzoo\Assistant\Models\AssistantSettings;
 use Shazzoo\Assistant\Models\Conversation;
@@ -117,19 +116,18 @@ it('keeps the daily figures when transcripts are pruned', function () {
         ->and(DailyStatistic::count())->toBe(1);
 });
 
-it('shows the figures at the top of the page, linked to the tabs, and not on the dashboard', function () {
+it('saves the settings with the button in the header, only on the settings tab', function () {
     $this->actingAs(admin());
-    DailyStatistic::factory()->create();
-    KnowledgeEntry::factory()->create(['answer' => 'Het is [BEDRAG].']);
 
-    Livewire::test(StatsOverview::class)
-        ->assertSee('Gesprekken')
-        ->assertSee('30%')
-        ->assertSee('0 van 1')
-        ->assertSee(AssistantPage::getUrl(['tab' => 'gesprekken']), escape: false)
-        ->assertSee(AssistantPage::getUrl(['tab' => 'kennisbestand']), escape: false);
+    assistantAdmin('kennisbestand')->assertActionHidden('save');
 
-    expect(StatsOverview::isDiscovered())->toBeFalse();
+    assistantAdmin('instellingen')
+        ->assertActionVisible('save')
+        ->fillForm(['name' => 'Joan'])
+        ->callAction('save')
+        ->assertHasNoFormErrors();
+
+    expect(AssistantSettings::current()->name)->toBe('Joan');
 });
 
 it('filters the knowledge on rows the assistant does not use', function () {

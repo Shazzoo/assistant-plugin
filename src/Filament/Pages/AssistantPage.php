@@ -27,7 +27,6 @@ use Shazzoo\Assistant\Filament\Tabs\EmployeesTab;
 use Shazzoo\Assistant\Filament\Tabs\KnowledgeTab;
 use Shazzoo\Assistant\Filament\Tabs\ReferencesTab;
 use Shazzoo\Assistant\Filament\Tabs\UnansweredTab;
-use Shazzoo\Assistant\Filament\Widgets\StatsOverview;
 use Shazzoo\Assistant\Instructions;
 use Shazzoo\Assistant\Models\AssistantSettings;
 use Shazzoo\Assistant\Models\AvatarSettings;
@@ -114,9 +113,16 @@ class AssistantPage extends Page implements HasTable
         };
     }
 
-    protected function getHeaderWidgets(): array
+    protected function getHeaderActions(): array
     {
-        return [StatsOverview::class];
+        return [
+            Action::make('save')
+                ->label('Opslaan')
+                ->icon('heroicon-o-check')
+                ->keyBindings(['mod+s'])
+                ->visible(fn (): bool => $this->tab === 'instellingen')
+                ->action(fn () => $this->save()),
+        ];
     }
 
     public function table(Table $table): Table

@@ -13,13 +13,7 @@
     </x-filament::tabs>
 
     @if ($tab === 'instellingen')
-        <form wire:submit="save" class="flex flex-col gap-6">
-            {{ $this->form }}
-
-            <div>
-                <x-filament::button type="submit">Opslaan</x-filament::button>
-            </div>
-        </form>
+        {{ $this->form }}
     @else
         {{ $this->table }}
     @endif
