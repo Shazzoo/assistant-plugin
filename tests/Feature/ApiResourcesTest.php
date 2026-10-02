@@ -24,11 +24,12 @@ it('declares only fields the models can store', function () {
     }
 });
 
-it('keeps conversations read-only and the avatar settings to their single row', function () {
+it('keeps conversations read-only and both settings to their single row', function () {
     $resources = collect(apiResources())->keyBy('key');
 
     expect($resources['conversations'])->toMatchArray(['writable' => false, 'creatable' => false])
-        ->and($resources['avatar_settings']['creatable'])->toBeFalse();
+        ->and($resources['avatar_settings']['creatable'])->toBeFalse()
+        ->and($resources['assistant_settings']['creatable'])->toBeFalse();
 });
 
 it('never exposes the LiveAvatar API key', function () {

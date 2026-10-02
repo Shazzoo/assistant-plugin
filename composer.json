@@ -41,6 +41,62 @@
       "provider": "Shazzoo\\Assistant\\AssistantServiceProvider",
       "api_resources": [
         {
+          "key": "assistant_settings",
+          "label": "Assistant settings",
+          "model": "Shazzoo\\Assistant\\Models\\AssistantSettings",
+          "creatable": false,
+          "fields": [
+            {
+              "name": "name",
+              "type": "text"
+            },
+            {
+              "name": "company",
+              "type": "text"
+            },
+            {
+              "name": "greeting",
+              "type": "textarea"
+            },
+            {
+              "name": "instructions",
+              "type": "textarea"
+            },
+            {
+              "name": "contact_name",
+              "type": "text"
+            },
+            {
+              "name": "contact_phone",
+              "type": "text"
+            },
+            {
+              "name": "contact_email",
+              "type": "text",
+              "max": 150
+            },
+            {
+              "name": "share_to",
+              "type": "text",
+              "max": 150
+            },
+            {
+              "name": "public_details",
+              "type": "tags"
+            },
+            {
+              "name": "max_question_length",
+              "type": "number",
+              "required": true
+            },
+            {
+              "name": "max_questions",
+              "type": "number",
+              "required": true
+            }
+          ]
+        },
+        {
           "key": "avatar_settings",
           "label": "Avatar settings",
           "model": "Shazzoo\\Assistant\\Models\\AvatarSettings",
