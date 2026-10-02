@@ -38,7 +38,239 @@
       "slug": "assistant",
       "name": "Assistant",
       "description": "An AI assistant that answers visitors' questions from the site's own content.",
-      "provider": "Shazzoo\\Assistant\\AssistantServiceProvider"
+      "provider": "Shazzoo\\Assistant\\AssistantServiceProvider",
+      "api_resources": [
+        {
+          "key": "avatar_settings",
+          "label": "Avatar settings",
+          "model": "Shazzoo\\Assistant\\Models\\AvatarSettings",
+          "creatable": false,
+          "fields": [
+            {
+              "name": "enabled",
+              "type": "toggle"
+            },
+            {
+              "name": "sandbox",
+              "type": "toggle"
+            },
+            {
+              "name": "avatar_id",
+              "type": "text"
+            },
+            {
+              "name": "voice_id",
+              "type": "text"
+            },
+            {
+              "name": "context_id",
+              "type": "text"
+            },
+            {
+              "name": "language",
+              "type": "select",
+              "options": {
+                "nl": "Nederlands",
+                "en": "Engels"
+              }
+            },
+            {
+              "name": "quality",
+              "type": "select",
+              "options": {
+                "low": "Laag",
+                "medium": "Middel",
+                "high": "Hoog",
+                "very_high": "Zeer hoog"
+              }
+            },
+            {
+              "name": "idle_stop_seconds",
+              "type": "number"
+            },
+            {
+              "name": "max_session_seconds",
+              "type": "number"
+            },
+            {
+              "name": "max_concurrent",
+              "type": "number"
+            },
+            {
+              "name": "monthly_budget_minutes",
+              "type": "number"
+            },
+            {
+              "name": "fallback_image_id",
+              "type": "media"
+            }
+          ]
+        },
+        {
+          "key": "knowledge_entries",
+          "label": "Knowledge entries",
+          "model": "Shazzoo\\Assistant\\Models\\KnowledgeEntry",
+          "fields": [
+            {
+              "name": "question",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "variants",
+              "type": "textarea"
+            },
+            {
+              "name": "answer",
+              "type": "textarea"
+            },
+            {
+              "name": "category",
+              "type": "text"
+            },
+            {
+              "name": "status",
+              "type": "select",
+              "required": true,
+              "options": {
+                "vrij": "Vrij",
+                "voorwaarde": "Voorwaarde",
+                "nooit": "Nooit"
+              }
+            },
+            {
+              "name": "source",
+              "type": "text"
+            },
+            {
+              "name": "valid_until",
+              "type": "text"
+            },
+            {
+              "name": "owner",
+              "type": "text"
+            },
+            {
+              "name": "checked_at",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "key": "employees",
+          "label": "Employees",
+          "model": "Shazzoo\\Assistant\\Models\\Employee",
+          "order_by": "name",
+          "fields": [
+            {
+              "name": "name",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "role",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "expertise",
+              "type": "text"
+            },
+            {
+              "name": "hobby",
+              "type": "text"
+            },
+            {
+              "name": "years_of_experience",
+              "type": "number"
+            },
+            {
+              "name": "may_be_named",
+              "type": "toggle",
+              "default": false
+            },
+            {
+              "name": "consented_at",
+              "type": "text"
+            },
+            {
+              "name": "notes",
+              "type": "textarea"
+            }
+          ]
+        },
+        {
+          "key": "client_references",
+          "label": "Client references",
+          "model": "Shazzoo\\Assistant\\Models\\ClientReference",
+          "order_by": "client",
+          "fields": [
+            {
+              "name": "client",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "sector",
+              "type": "text",
+              "required": true
+            },
+            {
+              "name": "size",
+              "type": "text"
+            },
+            {
+              "name": "what_we_did",
+              "type": "textarea"
+            },
+            {
+              "name": "name_released",
+              "type": "toggle",
+              "default": false
+            },
+            {
+              "name": "figures_released",
+              "type": "toggle",
+              "default": false
+            },
+            {
+              "name": "released_at",
+              "type": "text"
+            },
+            {
+              "name": "recorded_in",
+              "type": "text"
+            }
+          ]
+        },
+        {
+          "key": "conversations",
+          "label": "Conversations",
+          "model": "Shazzoo\\Assistant\\Models\\Conversation",
+          "order_by": "created_at",
+          "order_direction": "desc",
+          "creatable": false,
+          "writable": false,
+          "fields": [
+            {
+              "name": "session_number",
+              "type": "text"
+            },
+            {
+              "name": "page",
+              "type": "text"
+            },
+            {
+              "name": "language",
+              "type": "text"
+            },
+            {
+              "name": "messages",
+              "type": "json"
+            }
+          ]
+        }
+      ]
     }
   },
   "config": {
