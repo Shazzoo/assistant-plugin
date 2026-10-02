@@ -149,3 +149,11 @@ it('ignores a question from a bot that fills the hidden field', function () {
         ->assertSet('messages', [])
         ->assertSet('isAnswering', false);
 });
+
+it('resolves its own components at runtime in the block view', function () {
+    // Content Studio registers the views of every installed plugin, but boots only the active ones.
+    // view:cache then compiles this view without the assistant:: components, so a static tag fails the deploy.
+    $view = file_get_contents(__DIR__.'/../../resources/views/components/blocks/assistant/assistant.blade.php');
+
+    expect($view)->not->toContain('<x-assistant::');
+});

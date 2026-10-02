@@ -19,7 +19,7 @@
         </div>
     @endif
 
-    <x-assistant::panel
+    <x-dynamic-component component="assistant::panel"
         :image="$image"
         :alt="$data['image_alt'] ?? ''"
         :suggestions="$suggestions"
