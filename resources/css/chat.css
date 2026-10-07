@@ -109,6 +109,11 @@
     gap: 0.5rem;
 }
 
+/* display: flex hierboven wint anders van het hidden-attribuut. */
+.assistant-block__controls[hidden] {
+    display: none;
+}
+
 @media (min-width: 64rem) {
     .assistant-block--with-image {
         display: grid;
