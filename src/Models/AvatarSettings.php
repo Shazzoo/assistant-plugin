@@ -102,11 +102,23 @@ class AvatarSettings extends Model
     {
         $stored = $this->storedApiKey();
 
-        return match (true) {
+        $hint = match (true) {
             $stored !== null => 'Ingesteld in het dashboard, eindigt op …'.mb_substr($stored, -4),
             filled(config('assistant.avatar.api_key')) => 'Ingesteld in .env, eindigt op …'.mb_substr((string) config('assistant.avatar.api_key'), -4),
             default => 'Nog niet ingesteld',
         };
+
+        return self::isClaudeKey($this->apiKey())
+            ? $hint.'. Let op: dit is een API-key van Claude (Anthropic), niet van LiveAvatar; zo start de avatar niet'
+            : $hint;
+    }
+
+    /**
+     * Een sleutel van Anthropic, per ongeluk in het LiveAvatar-veld geplakt.
+     */
+    public static function isClaudeKey(?string $apiKey): bool
+    {
+        return str_starts_with((string) $apiKey, 'sk-ant-');
     }
 
     /**

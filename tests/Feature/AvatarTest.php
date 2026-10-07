@@ -268,6 +268,33 @@ it('keeps the key when the field is left empty and can forget it', function () {
         ->and(AvatarSettings::current()->apiKeyHint())->toContain('.env');
 });
 
+it('refuses a Claude key in the LiveAvatar key field', function () {
+    $this->actingAs(adminUser(['email' => 'beheer@voorbeeld.nl']));
+
+    assistantAdmin('instellingen')
+        ->fillForm(['avatar' => ['new_api_key' => 'sk-ant-api03-geheim']])
+        ->call('save')
+        ->assertHasFormErrors(['avatar.new_api_key']);
+
+    expect(AvatarSettings::current()->apiKey())->not->toBe('sk-ant-api03-geheim');
+});
+
+it('warns when the key in use is a Claude key', function () {
+    config(['assistant.avatar.api_key' => null]);
+    AvatarSettings::current()->setApiKey('sk-ant-api03-oud-1111');
+
+    expect(AvatarSettings::current()->apiKeyHint())->toContain('eindigt op …1111')->toContain('Claude');
+
+    AvatarSettings::current()->setApiKey(null);
+    config(['assistant.avatar.api_key' => 'sk-ant-api03-env-2222']);
+
+    expect(AvatarSettings::current()->apiKeyHint())->toContain('.env')->toContain('Claude');
+
+    config(['assistant.avatar.api_key' => 'la-geheim-3333']);
+
+    expect(AvatarSettings::current()->apiKeyHint())->not->toContain('Claude');
+});
+
 it('falls back to the photo when the stored key cannot be decrypted anymore', function () {
     config(['assistant.avatar.api_key' => null]);
     avatarSettings();

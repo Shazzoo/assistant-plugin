@@ -3,6 +3,7 @@
 namespace Shazzoo\Assistant\Filament\Pages;
 
 use BackedEnum;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TagsInput;
@@ -150,7 +151,12 @@ class Settings extends Page
                             ->helperText(fn (): string => AvatarSettings::current()->apiKeyHint().'. Leeg laten om de huidige sleutel te houden; hij wordt versleuteld opgeslagen.')
                             ->password()
                             ->autocomplete('off')
-                            ->maxLength(500),
+                            ->maxLength(500)
+                            ->rule(fn (): Closure => function (string $attribute, mixed $value, Closure $fail): void {
+                                if (AvatarSettings::isClaudeKey($value)) {
+                                    $fail('Dit is een API-key van Claude (Anthropic). Vul hier de sleutel van LiveAvatar in.');
+                                }
+                            }),
                         Toggle::make('forget_api_key')
                             ->label('Sleutel uit het beheer wissen')
                             ->helperText('Staat er een sleutel in .env, dan wordt die daarna weer gebruikt.'),
