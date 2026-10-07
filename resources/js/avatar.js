@@ -112,6 +112,8 @@ class AssistantAvatar {
             }
 
             livekit ??= await import(this.stageEl.dataset.livekitUrl);
+            // LiveKit logt standaard elke verbindingsstap; dat hoort niet in de console van bezoekers.
+            livekit.setLogLevel?.('silent');
             const { Room, RoomEvent } = livekit;
 
             this.room = new Room({ adaptiveStream: true, dynacast: false });
