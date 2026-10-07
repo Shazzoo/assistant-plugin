@@ -96,6 +96,11 @@
     visibility: hidden;
 }
 
+/* Tot het eerste beeld binnen is, ligt de video doorzichtig over de foto. */
+.assistant-block__stage:not([data-avatar-live]) video {
+    opacity: 0;
+}
+
 .assistant-block__controls {
     position: absolute;
     top: 0.75rem;

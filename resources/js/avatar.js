@@ -144,8 +144,11 @@ class AssistantAvatar {
 
     attachTrack(track) {
         if (track.kind === livekit.Track.Kind.Video) {
+            // De foto blijft staan tot er echt beeld is; anders knippert de avatar even zwart.
+            // De video zelf moet zichtbaar zijn (wel doorzichtig), anders stuurt LiveKit geen beeld.
+            this.videoEl.addEventListener('playing', () => this.showVideo(), { once: true });
+            this.videoEl.hidden = false;
             track.attach(this.videoEl);
-            this.showVideo();
         } else if (track.kind === livekit.Track.Kind.Audio) {
             const audioEl = track.attach();
             audioEl.muted = this.muted;
