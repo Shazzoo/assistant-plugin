@@ -134,8 +134,8 @@ class AssistantAvatar {
 
             this.resetIdleTimer();
             this.speakNext();
-        } catch (error) {
-            console.warn('de assistent: pratende avatar niet beschikbaar', error);
+        } catch {
+            // Geen avatar: de foto blijft staan en de chat werkt gewoon door.
             await this.stop('closed');
         } finally {
             this.starting = false;
@@ -257,7 +257,7 @@ class AssistantAvatar {
 
         this.room.localParticipant
             .publishData(encoder.encode(JSON.stringify(message)), { reliable: true, topic: 'agent-control' })
-            .catch((error) => console.warn('de assistent: kon niet naar de avatar sturen', error));
+            .catch(() => {});
     }
 
     setMuted(muted) {
