@@ -1,5 +1,6 @@
 <?php
 
+use Filament\Actions\Testing\TestAction;
 use Livewire\Livewire;
 use Shazzoo\Assistant\Instructions;
 use Shazzoo\Assistant\Livewire\AssistantChat;
@@ -70,6 +71,22 @@ it('saves edited instructions and can reset them to the template', function () {
     assistantAdmin('instellingen')
         ->assertSet('data.instructions', AssistantSettings::current()->instructions)
         ->fillForm(['instructions' => ''])
+        ->call('save');
+
+    expect(AssistantSettings::current()->instructions)->toBeNull();
+});
+
+it('resets the instructions to the template after a confirmation', function () {
+    $this->actingAs(adminUser());
+    AssistantSettings::current()->update(['instructions' => 'Eigen instructie.']);
+    $action = TestAction::make('useTemplate')->schemaComponent('instructions', schema: 'form');
+
+    assistantAdmin('instellingen')
+        ->mountAction($action)
+        ->assertActionMounted($action)
+        ->assertSet('data.instructions', 'Eigen instructie.')
+        ->callMountedAction()
+        ->assertSet('data.instructions', Instructions::defaultTemplate())
         ->call('save');
 
     expect(AssistantSettings::current()->instructions)->toBeNull();

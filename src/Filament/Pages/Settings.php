@@ -124,11 +124,19 @@ class Settings extends Page
                     ->collapsed()
                     ->schema([
                         Textarea::make('instructions')
-                            ->hiddenLabel()
+                            ->label('Instructie voor de assistent')
                             ->rows(24)
                             ->hintAction(
                                 Action::make('useTemplate')
                                     ->label('Terugzetten naar het sjabloon')
+                                    ->button()
+                                    ->color('gray')
+                                    ->size('sm')
+                                    ->icon('heroicon-o-arrow-uturn-left')
+                                    ->requiresConfirmation()
+                                    ->modalHeading('Instructie terugzetten naar het sjabloon?')
+                                    ->modalDescription('Je eigen wijzigingen in de instructie gaan verloren. Na opslaan volgt de assistent weer het sjabloon van de plugin.')
+                                    ->modalSubmitActionLabel('Terugzetten')
                                     ->action(fn () => $this->data['instructions'] = Instructions::defaultTemplate()),
                             ),
                     ]),
