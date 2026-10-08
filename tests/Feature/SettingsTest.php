@@ -39,6 +39,42 @@ it('uses the own instructions instead of the template, with the placeholders fil
     expect(app(Instructions::class)->render())->toBe('Je bent Joan. Bel 010 123 4567 of 010 123 4567.');
 });
 
+it('shows the template as editable text and keeps following it while unchanged', function () {
+    $this->actingAs(adminUser());
+
+    assistantAdmin('instellingen')
+        ->assertSet('data.instructions', Instructions::defaultTemplate())
+        ->call('save')
+        ->assertHasNoFormErrors();
+
+    expect(AssistantSettings::current()->instructions)->toBeNull();
+});
+
+it('treats the template with other line endings or surrounding whitespace as unchanged', function () {
+    $template = Instructions::defaultTemplate();
+
+    expect(Instructions::isDefaultTemplate(str_replace("\n", "\r\n", $template)."  \n"))->toBeTrue()
+        ->and(Instructions::isDefaultTemplate(null))->toBeTrue()
+        ->and(Instructions::isDefaultTemplate($template.'Extra regel.'))->toBeFalse();
+});
+
+it('saves edited instructions and can reset them to the template', function () {
+    $this->actingAs(adminUser());
+
+    assistantAdmin('instellingen')
+        ->fillForm(['instructions' => Instructions::defaultTemplate()."\nNoem nooit prijzen."])
+        ->call('save');
+
+    expect(AssistantSettings::current()->instructions)->toEndWith('Noem nooit prijzen.');
+
+    assistantAdmin('instellingen')
+        ->assertSet('data.instructions', AssistantSettings::current()->instructions)
+        ->fillForm(['instructions' => ''])
+        ->call('save');
+
+    expect(AssistantSettings::current()->instructions)->toBeNull();
+});
+
 it('speaks English on an English site', function () {
     app()->setLocale('en');
 

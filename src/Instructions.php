@@ -19,6 +19,16 @@ class Instructions
         return File::get(dirname(__DIR__).'/resources/instructions/default.md');
     }
 
+    /**
+     * Leeg of gelijk aan het sjabloon; regeleinden en witruimte aan begin en eind tellen niet.
+     */
+    public static function isDefaultTemplate(?string $instructions): bool
+    {
+        $normalize = fn (string $text): string => trim(str_replace("\r\n", "\n", $text));
+
+        return blank($instructions) || $normalize($instructions) === $normalize(self::defaultTemplate());
+    }
+
     public function render(): string
     {
         $template = filled($this->settings->instructions) ? $this->settings->instructions : self::defaultTemplate();

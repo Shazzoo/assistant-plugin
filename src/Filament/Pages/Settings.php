@@ -120,16 +120,15 @@ class Settings extends Page
                             ->numeric()->minValue(1)->maxValue(100)->required(),
                     ]),
                 Section::make('Instructies')
-                    ->description('Leeg: het algemene sjabloon van de plugin. Je kunt {{assistant}}, {{company}}, {{contact}}, {{phone}} en {{email}} gebruiken. Laat een wijziging eerst door de testset gaan (php artisan assistant:eval).')
+                    ->description('Zolang je het sjabloon van de plugin niet wijzigt, krijgt de site verbeteringen aan het sjabloon vanzelf mee. Je kunt {{assistant}}, {{company}}, {{contact}}, {{phone}} en {{email}} gebruiken. Laat een wijziging eerst door de testset gaan (php artisan assistant:eval).')
                     ->collapsed()
                     ->schema([
                         Textarea::make('instructions')
                             ->hiddenLabel()
                             ->rows(24)
-                            ->placeholder(fn (): string => Instructions::defaultTemplate())
                             ->hintAction(
                                 Action::make('useTemplate')
-                                    ->label('Sjabloon invullen om aan te passen')
+                                    ->label('Terugzetten naar het sjabloon')
                                     ->action(fn () => $this->data['instructions'] = Instructions::defaultTemplate()),
                             ),
                     ]),
@@ -209,6 +208,11 @@ class Settings extends Page
         $state = $this->form->getState();
         $avatar = $state['avatar'] ?? [];
 
+        // Het ongewijzigde sjabloon niet opslaan: dan volgt de site latere verbeteringen eraan.
+        if (Instructions::isDefaultTemplate($state['instructions'] ?? null)) {
+            $state['instructions'] = null;
+        }
+
         AssistantSettings::current()->update(Arr::except($state, ['avatar']));
 
         $avatarSettings = AvatarSettings::current();
@@ -228,8 +232,12 @@ class Settings extends Page
 
     private function fillSettings(): void
     {
+        $settings = AssistantSettings::current();
+
         $this->form->fill([
-            ...AssistantSettings::current()->toArray(),
+            ...$settings->toArray(),
+            // Het sjabloon als tekst om in te bewerken, niet als placeholder.
+            'instructions' => filled($settings->instructions) ? $settings->instructions : Instructions::defaultTemplate(),
             'avatar' => AvatarSettings::current()->toArray(),
         ]);
     }
