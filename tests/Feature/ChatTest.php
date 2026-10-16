@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Blade;
+use Livewire\Features\SupportDisablingBackButtonCache\DisableBackButtonCacheMiddleware;
 use Livewire\Livewire;
 use Shazzoo\Assistant\Assistant;
 use Shazzoo\Assistant\FakeAssistant;
@@ -31,6 +32,13 @@ it('shows the chat with its greeting in the block', function () {
         ->toContain('Waar blijven onze gegevens?')
         ->toContain('Antwoorden komen van AI en kunnen onvolledig zijn.')
         ->toContain(route('assistant.css', 'chat.css'));
+});
+
+it('leaves the caching of the page with the chat to the site', function () {
+    $response = (new DisableBackButtonCacheMiddleware)->handle(request(), fn () => response(Blade::render('<livewire:assistant-chat />')));
+
+    expect($response->getContent())->toContain('wire:name="assistant-chat"')
+        ->and($response->headers->get('Cache-Control'))->not->toContain('no-store');
 });
 
 it('works with blank settings: a default name, no greeting and no share button', function () {

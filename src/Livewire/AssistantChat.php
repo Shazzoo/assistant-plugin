@@ -340,6 +340,10 @@ class AssistantChat extends Component
 
     public function render(): View
     {
+        // Livewire zet anders no-store op elke pagina met een component erop. De
+        // chat begint bij elk bezoek opnieuw, dus de site mag de pagina zelf cachen.
+        $this->enableBackButtonCache();
+
         return view('assistant::chat');
     }
 
