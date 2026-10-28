@@ -15,6 +15,7 @@ use Shazzoo\Assistant\Console\EvalCommand;
 use Shazzoo\Assistant\Console\ExportKnowledgeCommand;
 use Shazzoo\Assistant\Console\ImportKnowledgeCommand;
 use Shazzoo\Assistant\Http\AssetController;
+use Shazzoo\Assistant\Http\StartAvatarController;
 use Shazzoo\Assistant\Http\StopAvatarController;
 use Shazzoo\Assistant\Livewire\AssistantChat;
 use Shazzoo\Assistant\Livewire\AssistantTable;
@@ -113,6 +114,12 @@ final class AssistantServiceProvider extends ServiceProvider
             // css/ en js/: die vallen buiten de catch-all route voor pagina's van core.
             Route::get('/css/assistant/{file}', AssetController::class)->where('file', 'chat\.css')->name('assistant.css');
             Route::get('/js/assistant/{file}', AssetController::class)->where('file', 'avatar\.js')->name('assistant.js');
+
+            // Start de pratende avatar. Ondertekend: de chat krijgt de URL pas na de eerste vraag.
+            Route::post('/assistant/avatar/{conversation}/start', StartAvatarController::class)
+                ->middleware('signed')
+                ->withoutMiddleware(PreventRequestForgery::class)
+                ->name('assistant.avatar.start');
 
             // Stopt de pratende avatar: bij stilte (fetch) en als de bezoeker de pagina verlaat (sendBeacon).
             // Ondertekend, zodat alleen de chat die de sessie startte hem kan stoppen.

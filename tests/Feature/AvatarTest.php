@@ -41,13 +41,40 @@ function chatWithQuestion(string $question = 'Wat doen jullie? Bel me op 06-1234
     return Livewire::test(AssistantChat::class, ['page' => '/'])->set('prompt', $question)->call('send')->call('answer');
 }
 
+/**
+ * De ondertekende URL die de chat na een vraag naar de browser stuurt, of null als de avatar niet kan.
+ */
+function avatarStartUrl(string $question = 'Wat doen jullie? Bel me op 06-12345678'): ?string
+{
+    $chat = Livewire::test(AssistantChat::class, ['page' => '/'])->set('prompt', $question)->call('send');
+
+    return collect($chat->effects['dispatches'] ?? [])->firstWhere('name', 'assistant-question-sent')['params']['startUrl'] ?? null;
+}
+
+/**
+ * Stelt een vraag en start de avatar zoals de browser dat doet. Null betekent: de foto blijft staan.
+ *
+ * @return array<string, mixed>|null
+ */
+function startAvatar(string $question = 'Wat doen jullie? Bel me op 06-12345678'): ?array
+{
+    $url = avatarStartUrl($question);
+
+    if ($url === null) {
+        return null;
+    }
+
+    $response = test()->post($url);
+
+    return $response->status() === 200 ? $response->json() : null;
+}
+
 it('stays off by default and keeps the photo', function () {
     Http::fake();
 
-    chatWithQuestion()
-        ->assertSee('data-avatar="off"', escape: false)
-        ->call('startAvatar')
-        ->assertReturned(null);
+    chatWithQuestion()->assertSee('data-avatar="off"', escape: false);
+
+    expect(startAvatar())->toBeNull();
 
     Http::assertNothingSent();
 });
@@ -56,7 +83,9 @@ it('starts a sandbox session with only server-side credentials', function () {
     fakeLiveAvatar();
     avatarSettings();
 
-    $session = chatWithQuestion()->assertSee('data-avatar="on"', escape: false)->call('startAvatar')->effects['returns'][0] ?? null;
+    chatWithQuestion()->assertSee('data-avatar="on"', escape: false);
+
+    $session = startAvatar();
 
     expect($session)
         ->livekit_url->toBe('wss://heygen.livekit.test')
@@ -80,7 +109,7 @@ it('never sends what the visitor typed to LiveAvatar', function () {
     fakeLiveAvatar();
     avatarSettings();
 
-    chatWithQuestion('Mijn nummer is 06-12345678, wat doen jullie?')->call('startAvatar');
+    startAvatar('Mijn nummer is 06-12345678, wat doen jullie?');
 
     Http::assertNotSent(fn (Request $request): bool => str_contains($request->body(), '06-12345678') || str_contains($request->body(), 'wat doen jullie'));
 });
@@ -89,7 +118,7 @@ it('uses the own avatar with its voice outside the sandbox', function () {
     fakeLiveAvatar();
     avatarSettings(['sandbox' => false, 'avatar_id' => '11111111-2222-3333-4444-555555555555', 'voice_id' => '66666666-7777-8888-9999-000000000000']);
 
-    chatWithQuestion()->call('startAvatar');
+    startAvatar();
 
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/v1/sessions/token')
         && $request['avatar_id'] === '11111111-2222-3333-4444-555555555555'
@@ -102,7 +131,7 @@ it('keeps sandbox sessions within the one minute LiveAvatar allows', function ()
     fakeLiveAvatar();
     avatarSettings(['max_session_seconds' => 600]);
 
-    chatWithQuestion()->call('startAvatar');
+    startAvatar();
 
     Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/v1/sessions/token') && $request['max_session_duration'] === 60);
 });
@@ -111,10 +140,11 @@ it('does not start before the first question, and only once per chat', function 
     fakeLiveAvatar();
     avatarSettings();
 
-    Livewire::test(AssistantChat::class)->call('startAvatar')->assertReturned(null);
+    $this->post('/assistant/avatar/some-chat/start')->assertForbidden();
 
-    $chat = chatWithQuestion()->call('startAvatar');
-    $chat->call('startAvatar')->assertReturned(null);
+    $url = avatarStartUrl();
+    $this->post($url)->assertOk();
+    $this->post($url)->assertNoContent();
 
     expect(AvatarSession::count())->toBe(1);
 });
@@ -126,6 +156,8 @@ it('tells the browser to start the avatar once the question is in, only when it 
     avatarSettings();
 
     Livewire::test(AssistantChat::class)->set('prompt', 'Wat doen jullie?')->call('send')->assertDispatched('assistant-question-sent');
+
+    expect(avatarStartUrl())->toContain('/assistant/avatar/')->toContain('signature=');
 });
 
 it('keeps the photo when the monthly budget is used up', function () {
@@ -135,7 +167,7 @@ it('keeps the photo when the monthly budget is used up', function () {
 
     expect(app(AvatarSessions::class)->unavailableReason())->toContain('maandbudget');
 
-    chatWithQuestion()->call('startAvatar')->assertReturned(null);
+    expect(startAvatar())->toBeNull();
     Http::assertNothingSent();
 });
 
@@ -145,7 +177,8 @@ it('keeps the photo when the credits at LiveAvatar are used up', function () {
 
     expect(app(AvatarSessions::class)->unavailableReason())->toBe('Het saldo bij LiveAvatar is op.');
 
-    chatWithQuestion()->assertSee('data-avatar="off"', escape: false)->call('startAvatar')->assertReturned(null);
+    chatWithQuestion()->assertSee('data-avatar="off"', escape: false);
+    expect(startAvatar())->toBeNull();
     Http::assertNotSent(fn (Request $request): bool => str_ends_with($request->url(), '/v1/sessions/token'));
 });
 
@@ -174,14 +207,14 @@ it('keeps the photo when too many sessions are running', function () {
     avatarSettings(['max_concurrent' => 1]);
     AvatarSession::factory()->running()->create();
 
-    chatWithQuestion()->call('startAvatar')->assertReturned(null);
+    expect(startAvatar())->toBeNull();
 });
 
 it('keeps the photo when LiveAvatar fails', function () {
     Http::fake(['api.liveavatar.test/*' => Http::response(['detail' => 'Invalid API key'], 401)]);
     avatarSettings();
 
-    chatWithQuestion()->call('startAvatar')->assertReturned(null);
+    expect(startAvatar())->toBeNull();
 
     expect(AvatarSession::count())->toBe(0);
 });
@@ -197,7 +230,7 @@ it('stops the session when the chat goes idle', function () {
     fakeLiveAvatar();
     avatarSettings();
 
-    $session = chatWithQuestion()->call('startAvatar')->effects['returns'][0];
+    $session = startAvatar();
 
     $this->post($session['stop_url'], ['reason' => 'idle'])->assertNoContent();
 
@@ -311,7 +344,7 @@ it('uses the key from the dashboard to call LiveAvatar', function () {
     config(['assistant.avatar.api_key' => null]);
     avatarSettings()->setApiKey('dashboard-key-1111');
 
-    chatWithQuestion()->call('startAvatar');
+    startAvatar();
 
     Http::assertSent(fn (Request $request): bool => $request->hasHeader('X-API-KEY', 'dashboard-key-1111'));
 });

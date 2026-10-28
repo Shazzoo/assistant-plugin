@@ -3,14 +3,12 @@
 namespace Shazzoo\Assistant\Livewire;
 
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
-use Livewire\Attributes\Async;
 use Livewire\Attributes\Locked;
-use Livewire\Attributes\Renderless;
 use Livewire\Component;
 use Shazzoo\Assistant\Assistant;
 use Shazzoo\Assistant\Avatar\AvatarSessions;
@@ -141,7 +139,7 @@ class AssistantChat extends Component
         $this->js('$wire.answer()');
 
         if ($this->avatarAvailable) {
-            $this->dispatch('assistant-question-sent');
+            $this->dispatch('assistant-question-sent', startUrl: URL::temporarySignedRoute('assistant.avatar.start', now()->addMinutes(5), ['conversation' => $this->sessionNumber]));
         }
     }
 
@@ -191,30 +189,6 @@ class AssistantChat extends Component
             // Het gesprek gaat voor; een mislukte registratie mag de bezoeker niet raken.
             Log::error('Transcriptie van de assistent kon niet worden opgeslagen', ['exception' => $exception->getMessage()]);
         }
-    }
-
-    /**
-     * Start de pratende avatar voor dit gesprek. De browser roept dit aan zodra een vraag
-     * verwerkt is. Async: het loopt naast het streamen van het antwoord, niet erna.
-     * Renderless en zonder componentstatus, zodat het niet botst met dat antwoord; stoppen
-     * gaat via de ondertekende stop_url. Null betekent: de foto blijft staan.
-     *
-     * @return array{session_id: string, livekit_url: string, livekit_client_token: string, idle_stop_seconds: int, stop_url: string}|null
-     */
-    #[Async]
-    #[Renderless]
-    public function startAvatar(AvatarSessions $sessions): ?array
-    {
-        if (! $this->avatarAvailable || $this->messages === []) {
-            return null;
-        }
-
-        // Eén start tegelijk per gesprek, ook als de browser twee keer vraagt.
-        if (! Cache::add("assistant:avatar-start:{$this->sessionNumber}", true, 30)) {
-            return null;
-        }
-
-        return $sessions->start();
     }
 
     public function openShare(): void

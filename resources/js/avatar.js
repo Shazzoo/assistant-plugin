@@ -1,7 +1,8 @@
 /**
  * Pratende avatar voor de assistent (HeyGen LiveAvatar via LiveKit).
  *
- * - Start bij de eerste vraag van de bezoeker (een klik, dus geluid mag spelen).
+ * - Start bij de eerste vraag van de bezoeker. Het geluid gaat via een AudioContext die tijdens
+ *   die klik ontstaat: Safari, Edge en mobiele browsers laten later gestart geluid anders niet toe.
  * - Stuurt alleen de antwoordtekst van de assistent naar de avatar, zin voor zin terwijl die binnenkomt.
  *   Wat de bezoeker typt en de microfoon worden nooit gebruikt.
  * - Stopt bij stilte of als de bezoeker de pagina verlaat; daarna staat de foto er weer.
@@ -26,6 +27,8 @@ class AssistantAvatar {
         this.session = null;
         this.starting = false;
         this.muted = false;
+        this.audioContext = null;
+        this.audioTracks = [];
         this.audioEls = [];
 
         this.queue = [];
@@ -40,10 +43,6 @@ class AssistantAvatar {
         this.bindChat();
         this.bindControls();
         window.addEventListener('pagehide', () => this.leave());
-    }
-
-    get component() {
-        return window.Livewire?.find(this.chatEl.getAttribute('wire:id'));
     }
 
     bindChat() {
@@ -63,22 +62,11 @@ class AssistantAvatar {
         // het antwoord van de assistent komt binnen in het element .assistant-streaming.
         new MutationObserver(() => this.readStream()).observe(this.chatEl, { childList: true, subtree: true, characterData: true });
 
-        // De server meldt dat de vraag verwerkt is: dan pas starten (de vraag staat dan in het gesprek).
-        // Pas een tik later: tegelijk aangeroepen methodes voegt Livewire samen tot één verzoek,
-        // en dan zou de avatar wachten tot het hele antwoord gestreamd is. Nu gaat het antwoord
-        // eerst de deur uit en loopt startAvatar (#[Async]) er in een eigen verzoek naast.
-        window.Livewire.on('assistant-question-sent', () => {
+        // De server meldt dat de vraag verwerkt is en geeft de (ondertekende) URL om te starten.
+        window.Livewire.on('assistant-question-sent', ({ startUrl }) => {
             if (! this.room && ! this.starting) {
-                setTimeout(() => this.start(), 50);
+                this.start(startUrl);
             }
-        });
-
-        // Livewire-foutmeldingen voor de avatar-aanroep niet als pop-up tonen: de foto blijft gewoon staan.
-        window.Livewire.interceptRequest(({ request, onError }) => {
-            if (! [...request.messages].some((message) => [...message.actions].some((action) => action.name === 'startAvatar'))) {
-                return;
-            }
-            onError(({ preventDefault }) => preventDefault());
         });
     }
 
@@ -91,6 +79,10 @@ class AssistantAvatar {
     }
 
     onQuestion() {
+        // Nog binnen de klik of Enter van de bezoeker: alleen dan mag geluid aan.
+        this.audioContext ??= new AudioContext();
+        this.audioContext.resume().catch(() => {});
+
         this.resetIdleTimer();
 
         // Een nieuwe vraag: de assistent houdt op met het vorige antwoord.
@@ -101,22 +93,24 @@ class AssistantAvatar {
         }
     }
 
-    async start() {
+    async start(startUrl) {
         this.starting = true;
 
         try {
-            this.session = await this.component?.startAvatar();
+            const response = await fetch(startUrl, { method: 'POST' });
 
-            if (! this.session) {
+            if (response.status !== 200) {
                 return;
             }
+
+            this.session = await response.json();
 
             livekit ??= await import(this.stageEl.dataset.livekitUrl);
             // LiveKit logt standaard elke verbindingsstap; dat hoort niet in de console van bezoekers.
             livekit.setLogLevel?.('silent');
             const { Room, RoomEvent } = livekit;
 
-            this.room = new Room({ adaptiveStream: true, dynacast: false });
+            this.room = new Room({ adaptiveStream: true, dynacast: false, webAudioMix: { audioContext: this.audioContext } });
 
             this.room.on(RoomEvent.TrackSubscribed, (track) => this.attachTrack(track));
             this.room.on(RoomEvent.DataReceived, (payload, participant, kind, topic) => this.onData(payload, topic));
@@ -152,11 +146,13 @@ class AssistantAvatar {
             this.videoEl.hidden = false;
             track.attach(this.videoEl);
         } else if (track.kind === livekit.Track.Kind.Audio) {
+            // Het element blijft stil; LiveKit speelt het geluid af via de AudioContext.
             const audioEl = track.attach();
-            audioEl.muted = this.muted;
             audioEl.hidden = true;
             this.stageEl.appendChild(audioEl);
             this.audioEls.push(audioEl);
+            track.setVolume(this.muted ? 0 : 1);
+            this.audioTracks.push(track);
         }
     }
 
@@ -264,7 +260,7 @@ class AssistantAvatar {
 
     setMuted(muted) {
         this.muted = muted;
-        this.audioEls.forEach((el) => (el.muted = muted));
+        this.audioTracks.forEach((track) => track.setVolume(muted ? 0 : 1));
 
         if (this.muteButton) {
             this.muteButton.textContent = muted ? this.muteButton.dataset.labelOn : this.muteButton.dataset.labelOff;
@@ -329,6 +325,7 @@ class AssistantAvatar {
         }
         this.audioEls.forEach((el) => el.remove());
         this.audioEls = [];
+        this.audioTracks = [];
     }
 }
 
